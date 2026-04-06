@@ -1,0 +1,6 @@
+@api_camem_HostAddress = http://localhost:5143
+
+GET {{api_camem_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
