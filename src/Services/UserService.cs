@@ -3,15 +3,16 @@ using api_camem.src.Interfaces;
 using api_camem.src.Models;
 using api_camem.src.Models.Base;
 using api_camem.src.Shared.DTOs;
+using api_camem.src.Shared.Templates;
 using api_camem.src.Shared.Utils;
 using api_camem.src.Shared.Validators;
 
 namespace api_camem.src.Services
 {
-    public class UserService(IUserRepository userRepository, IProfileUserRepository profileUserRepository, MailHandler mailHandler, UploadHandler uploadHander) : IUserService
+    public class UserService(IUserRepository userRepository, IProfileUserRepository profileUserRepository, MailHandler mailHandler, UploadHandler uploadHander, MailTemplate mailTemplate) : IUserService
     {
         #region READ
-        public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request, string userId)
+        public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
         {
             try
             {
@@ -19,6 +20,20 @@ namespace api_camem.src.Services
                 ResponseApi<List<dynamic>> users = await userRepository.GetAllAsync(pagination);
                 int count = await userRepository.GetCountDocumentsAsync(pagination);
                 return new(users.Data, count, pagination.PageNumber, pagination.PageSize);
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
+        
+        public async Task<ResponseApi<List<dynamic>>> GetCountAsync(GetAllDTO request)
+        {
+            try
+            {
+                PaginationUtil<User> pagination = new(request.QueryParams);
+                ResponseApi<List<dynamic>> users = await userRepository.GetCountAsync(pagination);
+                return new(users.Data);
             }
             catch(Exception ex)
             {
@@ -141,6 +156,32 @@ namespace api_camem.src.Services
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
 
                 return new(response.Data, 200, "Atualizado com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<User?>> UpdateStatusAccessAsync(UpdateUserStatusAccessDTO request)
+        {
+            try
+            {
+                ResponseApi<User?> user = await userRepository.GetByIdAsync(request.Id);
+                
+                if(user.Data is null) return new(null, 404, "Falha ao atualizar");
+
+                user.Data.UpdatedAt = DateTime.UtcNow;
+                user.Data.StatusAccess = request.StatusAccess;
+
+                ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+
+                if(request.StatusAccess == "Aprovado")
+                {
+                    await mailHandler.SendMailAsync(user.Data.Email, "Código de Confirmação", await mailTemplate.FirstAccess(user.Data.Name));
+                }
+
+                return new(response.Data, 200, request.StatusAccess == "Aprovado" ? "Aprovado com sucesso" : "Reprovado com sucesso");
             }
             catch(Exception ex)
             {

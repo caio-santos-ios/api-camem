@@ -119,7 +119,7 @@ namespace api_camem.src.Services
                         break;
 
                     case "FIRST_ACCESS":
-                        await mailHandler.SendMailAsync(userResponse.Data.Email, "Primeiro Acesso", await mailTemplate.FirstAccess(userResponse.Data.Name, userResponse.Data.Email, userResponse.Data.CodeAccess));
+                        await mailHandler.SendMailAsync(userResponse.Data.Email, "Primeiro Acesso", await mailTemplate.FirstAccess(userResponse.Data.Name));
                         break;
 
                     case "CONFIRM_ACCOUNT":

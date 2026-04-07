@@ -17,12 +17,12 @@ namespace api_camem.src.Shared.Templates
 
             return html;
         }
-        public async Task<string> FirstAccess(string name, string email, string passowrd)
+        public async Task<string> FirstAccess(string name)
         {
             Template? templates = await context.Templates.Find(x => x.Code == "FIRST_ACCESS" && !x.Deleted).FirstOrDefaultAsync();
             string html = templates?.Html ?? "";
             
-            html = html.Replace("{{name}}", name).Replace("{{email}}", email).Replace("{{password}}", passowrd);
+            html = html.Replace("{{name}}", name).Replace("{{ui_uri}}", UiURI);
 
             return html;
         }

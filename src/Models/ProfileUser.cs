@@ -1,3 +1,4 @@
+using api_camem.src.Enums.User;
 using api_camem.src.Models.Base;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -21,5 +22,9 @@ namespace api_camem.src.Models
         
         [BsonElement("modules")]
         public List<Module> Modules {get;set;} = [];
+
+        [BsonElement("role")]
+        [BsonRepresentation(BsonType.String)] 
+        public RoleEnum Role {get;set;} = RoleEnum.Student;
     }
 }

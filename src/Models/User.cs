@@ -16,6 +16,12 @@ namespace api_camem.src.Models
 
         [BsonElement("userName")]
         public string UserName {get;set;} = string.Empty;
+        
+        [BsonElement("ra")]
+        public string RA {get;set;} = string.Empty;
+        
+        [BsonElement("cpf")]
+        public string Cpf {get;set;} = string.Empty;
 
         [BsonElement("email")]
         public string Email {get;set;} = string.Empty;
@@ -25,10 +31,13 @@ namespace api_camem.src.Models
 
         [BsonElement("role")]
         [BsonRepresentation(BsonType.String)] 
-        public RoleEnum Role {get;set;} = RoleEnum.User;
+        public RoleEnum Role {get;set;} = RoleEnum.Student;
 
         [BsonElement("blocked")]
         public bool Blocked {get;set;} = false;
+        
+        [BsonElement("approved")]
+        public bool Approved {get;set;} = false;
         
         [BsonElement("admin")]
         public bool Admin {get;set;} = false;
@@ -54,6 +63,8 @@ namespace api_camem.src.Models
         [BsonElement("profileUserId")]
         public string ProfileUserId {get;set;} = string.Empty;
         
+        [BsonElement("statusAccess")]
+        public string StatusAccess {get;set;} = string.Empty;
     }
 
     public class Module 

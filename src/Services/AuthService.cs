@@ -11,10 +11,11 @@ using api_camem.src.Handlers;
 using api_camem.src.Shared.Templates;
 using api_camem.src.Shared.Validators;
 using api_camem.src.Shared.Utils;
+using api_camem.src.Enums.User;
 
 namespace api_camem.src.Services
 {
-    public class AuthService(IUserRepository userRepository, MailHandler mailHandler, MailTemplate mailTemplate) : IAuthService
+    public class AuthService(IUserRepository userRepository, IProfileUserRepository profileUserRepository, MailHandler mailHandler, MailTemplate mailTemplate) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -23,8 +24,11 @@ namespace api_camem.src.Services
                 if (string.IsNullOrEmpty(request.Email)) return new(null, 400, "E-mail é obrigatório");
                 if (string.IsNullOrEmpty(request.Password)) return new(null, 400, "Senha é obrigatória");
                 
-                ResponseApi<User?> res = await GetUserToken(request.Email);
-                if(res.Data is null) return new(null, 400, res.Message);
+                ResponseApi<User?> res = await userRepository.GetByEmailAsync(request.Email);
+                if(res.Data is null) return new(null, 400, "Dados incorretos");
+
+                if(res.Data.StatusAccess == "Pendente") return new(null, 400, "Aguarde a aprovação de um Coordenador ou Administrador para acessar o sistema.");
+                if(res.Data.StatusAccess == "Reprovado") return new(null, 400, "Acessar ao sistema reprovado.");
                 
                 User user = res.Data;
 
@@ -38,7 +42,8 @@ namespace api_camem.src.Services
 
                     await mailHandler.SendMailAsync(request.Email, "Confirmar Conta", await mailTemplate.NewLinkCodeConfirmAccount(res.Data.Name, access.CodeAccess));
                     return new(null, 400, "Conta não confirmada. Verifique seu e-mail.");
-                } 
+                }
+                
                 if (user.Blocked) return new(null, 400, "Conta bloqueada. Entre em contato com o suporte.");
 
                 bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
@@ -69,9 +74,15 @@ namespace api_camem.src.Services
         {
             try
             {
-                if (string.IsNullOrEmpty(request.Name)) return new(null, 400, "Nome é obrigatório");
+                if (string.IsNullOrEmpty(request.Name)) return new(null, 400, "Nome Completo é obrigatório");
                 if (string.IsNullOrEmpty(request.Email)) return new(null, 400, "E-mail é obrigatório");
+                if (string.IsNullOrEmpty(request.ProfileUserId)) return new(null, 400, "Vínculo institucional é obrigatório");
+
+                if (string.IsNullOrEmpty(request.Cpf) && request.TypeAccess) return new(null, 400, "CPF é obrigatória");
+                if (string.IsNullOrEmpty(request.RA) && !request.TypeAccess) return new(null, 400, "RA é obrigatória");
+                
                 if (string.IsNullOrEmpty(request.Password)) return new(null, 400, "Senha é obrigatória");
+
                 if (!request.PrivacyPolicy) return new(null, 400, "Aceitar os Termos e Condições e nossa Política de Privacidade é obrigatório");
                 
                 ResponseApi<User?> isEmail = await userRepository.GetByEmailAsync(request.Email);
@@ -81,20 +92,33 @@ namespace api_camem.src.Services
 
                 dynamic access = Util.GenerateCodeAccess(5);
 
+                ResponseApi<ProfileUser?> profileUser = await profileUserRepository.GetByIdAsync(request.ProfileUserId);
+                RoleEnum role = RoleEnum.Student;
+
+                if(profileUser.Data is not null)
+                {
+                    role = profileUser.Data.Role;
+                }
+
                 User user = new()
                 {
                     UserName = $"usuário{access.CodeAccess}",
                     Email = request.Email,
                     Name = request.Name,
+                    RA = request.RA,
+                    Cpf = request.Cpf,
                     Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     CodeAccess = access.CodeAccess,
                     CodeAccessExpiration = access.CodeAccessExpiration,
                     ValidatedAccess = false,
                     Modules = [],
-                    Admin = true,
+                    Admin = false,
                     Master = false,
                     Blocked = false,
-                    Role = Enums.User.RoleEnum.User
+                    Role = role,
+                    Approved = false,
+                    ProfileUserId = request.ProfileUserId,
+                    StatusAccess = "Pendente"
                 };
 
                 ResponseApi<User?> response = await userRepository.CreateAsync(user);
@@ -128,7 +152,7 @@ namespace api_camem.src.Services
                 ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
                 if(response.Data is null) return new(null, 400, "Falha ao solicitar novo código.");
                 
-                return new(null, 200, "Conta verificada com sucesso.");
+                return new(null, 200, "Conta verificada com sucesso! Aguarde a aprovação de um Coordenador ou Administrador para acessar o sistema.");
             }
             catch(Exception ex)
             {
@@ -195,7 +219,7 @@ namespace api_camem.src.Services
                 var email = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email)?.Value;
                 if (string.IsNullOrEmpty(email)) return new(null, 401, "Usuário não encontrado no token.");
 
-                ResponseApi<User?> user = await GetUserToken(email);
+                ResponseApi<User?> user = await userRepository.GetByEmailAsync(email);
                 if (user.Data is null) return new(null, 401, "Usuário não encontrado.");
 
                 string accessToken = GenerateJwtToken(user.Data);
@@ -317,7 +341,8 @@ namespace api_camem.src.Services
                 new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("type", refresh ? "refresh" : "access"),
-                new Claim("name", user.Name)
+                new Claim("name", user.Name),
+                new Claim("role", user.Role.ToString())
             ];
 
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
@@ -331,14 +356,6 @@ namespace api_camem.src.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private async Task<ResponseApi<User?>> GetUserToken (string email)
-        {
-            ResponseApi<User?> response = await userRepository.GetByEmailAsync(email);
-            if(response.Data is null) return new(null, 400, "Dados incorretos");
-
-            return new(response.Data);
         }
     }
 }

@@ -28,7 +28,6 @@ namespace api_camem.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
-        [Authorize]
         [HttpGet("select")]
         public async Task<IActionResult> GetSelect()
         {

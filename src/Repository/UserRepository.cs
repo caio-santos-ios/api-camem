@@ -37,7 +37,13 @@ namespace api_camem.src.Repository
                     new("$sort", pagination.PipelineSort),
                     new("$skip", pagination.Skip),
                     new("$limit", pagination.Limit),
+
+                    MongoUtil.Lookup("profile_users", ["$profileUserId"], ["$_id"], "_profile_user", [["deleted", false]], 1),
                     
+                    new("$addFields", new BsonDocument {
+                        {"profileUserName", MongoUtil.First("_profile_user.name")},
+                    }),
+
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -48,6 +54,37 @@ namespace api_camem.src.Repository
                         {"blocked", 1},
                         {"photo", 1},
                         {"createdAt", 1},
+                        {"statusAccess", 1},
+                        {"profileUserName", 1}
+                    }),
+                    new("$sort", pagination.PipelineSort),
+                };
+
+                List<BsonDocument> results = await context.Users.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetCountAsync(PaginationUtil<User> pagination)
+        {
+            try
+            {
+                List<BsonDocument> pipeline = new()
+                {
+                    new("$match", pagination.PipelineFilter),
+                    new("$sort", pagination.PipelineSort),
+
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"name", 1},
+                        {"createdAt", 1},
+                        {"statusAccess", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };

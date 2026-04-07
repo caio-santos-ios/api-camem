@@ -16,8 +16,15 @@ namespace api_camem.src.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
-            PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query), userId);
+            PaginationApi<List<dynamic>> response = await service.GetAllAsync(new(Request.Query));
+            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+        }
+        
+        [Authorize]
+        [HttpGet("count")]
+        public async Task<IActionResult> GetCount()
+        {
+            ResponseApi<List<dynamic>> response = await service.GetCountAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
         
@@ -46,6 +53,16 @@ namespace api_camem.src.Controllers
             if (user == null) return BadRequest("Dados inválidos.");
 
             ResponseApi<User?> response = await service.UpdateAsync(user);
+            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+        }
+        
+        [Authorize]
+        [HttpPut("status-access")]
+        public async Task<IActionResult> UpdateStatusAccessAsync([FromBody] UpdateUserStatusAccessDTO user)
+        {
+            if (user == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<User?> response = await service.UpdateStatusAccessAsync(user);
             return StatusCode(response.StatusCode, new { response.Message, response.Result });
         }
         
