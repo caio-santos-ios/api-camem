@@ -176,6 +176,21 @@ namespace api_camem.src.Repository
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
+        public async Task<ResponseApi<List<User>>> GetUsersNotificatedAsync()
+        {
+            try
+            {
+                List<User> users = await context.Users.Find(x => 
+                    !x.Deleted && 
+                    (x.Role == Enums.User.RoleEnum.Master || x.Role == Enums.User.RoleEnum.Admin || x.Role == Enums.User.RoleEnum.Director || x.Role == Enums.User.RoleEnum.Coordinator)
+                ).ToListAsync();
+                return new(users);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
         public async Task<ResponseApi<User?>> GetByUserNameAsync(string userName)
         {
             try

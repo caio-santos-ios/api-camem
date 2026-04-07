@@ -15,7 +15,7 @@ using api_camem.src.Enums.User;
 
 namespace api_camem.src.Services
 {
-    public class AuthService(IUserRepository userRepository, IProfileUserRepository profileUserRepository, MailHandler mailHandler, MailTemplate mailTemplate) : IAuthService
+    public class AuthService(IUserRepository userRepository, IProfileUserRepository profileUserRepository, MailHandler mailHandler, MailTemplate mailTemplate, INotificationService notificationService) : IAuthService
     {
         public async Task<ResponseApi<AuthResponse>> LoginAsync(LoginDTO request)
         {
@@ -94,10 +94,11 @@ namespace api_camem.src.Services
 
                 ResponseApi<ProfileUser?> profileUser = await profileUserRepository.GetByIdAsync(request.ProfileUserId);
                 RoleEnum role = RoleEnum.Student;
-
+                List<Module> modules = [];
                 if(profileUser.Data is not null)
                 {
                     role = profileUser.Data.Role;
+                    modules = profileUser.Data.Modules;
                 }
 
                 User user = new()
@@ -111,7 +112,7 @@ namespace api_camem.src.Services
                     CodeAccess = access.CodeAccess,
                     CodeAccessExpiration = access.CodeAccessExpiration,
                     ValidatedAccess = false,
-                    Modules = [],
+                    Modules = modules,
                     Admin = false,
                     Master = false,
                     Blocked = false,
@@ -125,6 +126,24 @@ namespace api_camem.src.Services
                 if(response.Data is null) return new(null, 400, "Falha ao criar conta.");
 
                 await mailHandler.SendMailAsync(request.Email, "Código de Confirmação", await mailTemplate.ConfirmAccount(request.Name, access.CodeAccess));
+
+                ResponseApi<List<User>> staff = await userRepository.GetUsersNotificatedAsync();
+                if(staff.Data is not null)
+                {
+                    List<string> staffIds = staff.Data.Select(u => u.Id).ToList();
+
+                    if (staffIds.Count > 0)
+                    {
+                        await notificationService.SendToManyAsync(staffIds, new()
+                        {
+                            Link      = $"/master-data/users",
+                            Title     = "Novo usuário aguardando aprovação",
+                            Message   = $"{request.Name} acabou de se cadastrar e aguarda aprovação.",
+                            Type      = "Notificacao",
+                            CreatedBy = response.Data.Id
+                        });
+                    }
+                }
 
                 return new(null, 201, "Conta criada com sucesso, foi enviado o e-mail de confirmação.");
             }

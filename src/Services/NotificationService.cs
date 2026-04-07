@@ -56,6 +56,21 @@ namespace api_camem.src.Services
             }
         }
 
+        public async Task SendToManyAsync(IEnumerable<string> userIds, CreateNotificationDTO dto)
+        {
+            foreach (var userId in userIds)
+            {
+                await SendToUserAsync(new()
+                {
+                    UserId    = userId,
+                    CreatedBy = userId,
+                    Title     = dto.Title,
+                    Message   = dto.Message,
+                    Type      = dto.Type,
+                    Link      = dto.Link,
+                });
+            }
+        }
         public async Task<ResponseApi<Notification?>> MarkAsReadAsync(string notificationId, string userId)
             => await repository.MarkAsReadAsync(notificationId, userId);
 

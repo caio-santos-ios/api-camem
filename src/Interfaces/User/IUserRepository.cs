@@ -11,6 +11,7 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetCountAsync(PaginationUtil<User> pagination);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<dynamic?>> GetLoggedAsync(string id);
+        Task<ResponseApi<List<User>>> GetUsersNotificatedAsync();
         Task<ResponseApi<User?>> GetByIdAsync(string id);
         Task<ResponseApi<User?>> GetByUserNameAsync(string userName);
         Task<ResponseApi<User?>> GetByEmailAsync(string email);

@@ -9,6 +9,7 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetByUserIdAsync(string userId, int limit = 30);
         Task<ResponseApi<int>> GetUnreadCountAsync(string userId);
         Task<ResponseApi<Notification?>> SendToUserAsync(CreateNotificationDTO dto);
+        Task SendToManyAsync(IEnumerable<string> userIds, CreateNotificationDTO dto);
         Task<ResponseApi<Notification?>> MarkAsReadAsync(string notificationId, string userId);
         Task MarkAllAsReadAsync(string userId);
         Task<ResponseApi<Notification>> DeleteAsync(string notificationId, string userId);
