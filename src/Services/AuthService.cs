@@ -143,6 +143,11 @@ namespace api_camem.src.Services
                             CreatedBy = response.Data.Id
                         });
                     }
+
+                    foreach (User userStaff in staff.Data)
+                    {
+                        await mailHandler.SendMailAsync(userStaff.Email, "Novo usuário aguardando aprovação", await mailTemplate.NewAccount(userStaff.Name, request.Name, request.Email, user.CreatedAt.ToString("dd/MM/yyyy")));
+                    }
                 }
 
                 return new(null, 201, "Conta criada com sucesso, foi enviado o e-mail de confirmação.");
@@ -297,7 +302,6 @@ namespace api_camem.src.Services
 
                 responseUser.Data.CodeAccess = access.CodeAccess;
                 responseUser.Data.CodeAccessExpiration = access.CodeAccessExpiration;
-                responseUser.Data.ValidatedAccess = false;
 
                 string template = await mailTemplate.ForgotPasswordWeb(responseUser.Data.Name, responseUser.Data.CodeAccess);
                 await mailHandler.SendMailAsync(request.Email, "Redefinição de Senha", template);

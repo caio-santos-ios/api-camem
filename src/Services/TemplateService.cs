@@ -107,10 +107,10 @@ namespace api_camem.src.Services
             try
             {
                 ResponseApi<Template?> templateResponse = await repository.GetByIdAsync(request.Id);
-                if(templateResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+                if(templateResponse.Data is null) return new(null, 404, "Falha ao Enviar");
 
                 ResponseApi<User?> userResponse = await userRepository.GetByIdAsync(request.CreatedBy);
-                if(userResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+                if(userResponse.Data is null) return new(null, 404, "Falha ao Enviar");
 
                 switch(request.Code)
                 {
@@ -126,6 +126,10 @@ namespace api_camem.src.Services
                         await mailHandler.SendMailAsync(userResponse.Data.Email, "Confirmar Conta", await mailTemplate.ConfirmAccount(userResponse.Data.Name, userResponse.Data.CodeAccess));
                         break;
 
+                    case "CODE_CONFIRM_ACCOUNT":
+                        await mailHandler.SendMailAsync(userResponse.Data.Email, "Código de Confirmação", await mailTemplate.ConfirmAccount(userResponse.Data.Name, userResponse.Data.CodeAccess));
+                        break;
+
                     case "NEW_CODE_CONFIRM_ACCOUNT":
                         await mailHandler.SendMailAsync(userResponse.Data.Email, "Novo Código de Confirmação de Conta", await mailTemplate.NewCodeConfirmAccount(userResponse.Data.Name, userResponse.Data.CodeAccess));
                         break;
@@ -133,6 +137,17 @@ namespace api_camem.src.Services
                     case "NEW_LINK_CODE_CONFIRM_ACCOUNT":
                         await mailHandler.SendMailAsync(userResponse.Data.Email, "Novo Link de Confirmação de Conta", await mailTemplate.NewLinkCodeConfirmAccount(userResponse.Data.Name, userResponse.Data.CodeAccess));
                         break;
+
+                    case "APPROVED_ACCOUNT":
+                        await mailHandler.SendMailAsync(userResponse.Data.Email, "Acesso Aprovado", await mailTemplate.ApprovedAccount(userResponse.Data.Name));
+                        break;
+
+                    case "NEW_ACCOUNT":
+                        await mailHandler.SendMailAsync(userResponse.Data.Email, "Novo usuário aguardando aprovação", await mailTemplate.NewAccount(userResponse.Data.Name, userResponse.Data.Name, userResponse.Data.Email, userResponse.Data.CreatedAt.ToString("dd/MM/yyyy")));
+                        break;
+
+                    default:
+                        return new(null, 400, "Template não encontrado");
                 }
 
                 return new(templateResponse.Data, 200, "Enviado com sucesso");

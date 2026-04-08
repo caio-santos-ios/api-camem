@@ -178,7 +178,7 @@ namespace api_camem.src.Services
 
                 if(request.StatusAccess == "Aprovado")
                 {
-                    await mailHandler.SendMailAsync(user.Data.Email, "Código de Confirmação", await mailTemplate.FirstAccess(user.Data.Name));
+                    await mailHandler.SendMailAsync(user.Data.Email, "Acesso Aprovado", await mailTemplate.ApprovedAccount(user.Data.Name));
                 }
 
                 return new(response.Data, 200, request.StatusAccess == "Aprovado" ? "Aprovado com sucesso" : "Reprovado com sucesso");

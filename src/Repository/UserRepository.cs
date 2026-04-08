@@ -44,6 +44,7 @@ namespace api_camem.src.Repository
                         {"profileUserName", MongoUtil.First("_profile_user.name")},
                     }),
 
+
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -246,18 +247,18 @@ namespace api_camem.src.Repository
             {
                 new("$match", pagination.PipelineFilter),
                 new("$sort", pagination.PipelineSort),
-                new("$addFields", new BsonDocument
-                {
-                    {"id", new BsonDocument("$toString", "$_id")},
+
+                MongoUtil.Lookup("profile_users", ["$profileUserId"], ["$_id"], "_profile_user", [["deleted", false]], 1),
+                
+                new("$addFields", new BsonDocument {
+                    {"profileUserName", MongoUtil.First("_profile_user.name")},
                 }),
+                
                 new("$project", new BsonDocument
                 {
                     {"_id", 0},
-                    {"password", 0},
-                    {"role", 0},
-                    {"blocked", 0},
-                    {"codeAccess", 0},
-                    {"validatedAccess", 0}
+                    {"id", new BsonDocument("$toString", "$_id")},
+                    {"profileUserName", 1}
                 }),
                 new("$sort", pagination.PipelineSort),
             };
