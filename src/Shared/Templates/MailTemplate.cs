@@ -110,5 +110,26 @@ namespace api_camem.src.Shared.Templates
 
             return html;
         }
+        public async Task<string> EventPublish(string name, string nameEvent, string startDate, string endDate, string functions, string hours)
+        {
+            Template? templates = await context.Templates.Find(x => x.Code == "EVENT_PUBLISHED" && !x.Deleted).FirstOrDefaultAsync();
+
+            string html = name;
+            
+            if(templates is not null)
+            {
+                html = templates.Html;
+                html = html.Replace("{{name}}", name)
+                .Replace("{{name_event}}", nameEvent)
+                .Replace("{{functions}}", functions)
+                .Replace("{{hours}}", hours)
+                .Replace("{{start_date}}", startDate);
+
+                if(!string.IsNullOrEmpty(endDate)) html = html.Replace("{{end_date}}", endDate);
+            }
+            
+
+            return html;
+        }
     }
 }

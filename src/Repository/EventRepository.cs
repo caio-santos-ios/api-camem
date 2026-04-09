@@ -11,10 +11,10 @@ using MongoDB.Driver;
 
 namespace api_camem.src.Repository
 {
-    public class TemplateRepository(AppDbContext context) : ITemplateRepository
+    public class EventRepository(AppDbContext context) : IEventRepository
     {
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Template> pagination)
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Event> pagination)
         {
             try
             {
@@ -24,6 +24,9 @@ namespace api_camem.src.Repository
                     new("$sort", pagination.PipelineSort),
                     new("$skip", pagination.Skip),
                     new("$limit", pagination.Limit),
+                    
+                    MongoUtil.Lookup("event_participants", ["$_id"], ["$eventId"], "_event_participants", [["deleted", false]]),
+
                     new("$addFields", new BsonDocument
                     {
                         {"id", new BsonDocument("$toString", "$_id")},
@@ -31,11 +34,31 @@ namespace api_camem.src.Repository
                     new("$project", new BsonDocument
                     {
                         {"_id", 0}, 
+                        {"id", 1},
+                        {"title", 1},
+                        {"description", 1},
+                        {"status", 1},
+                        {"startDate", 1},
+                        {"endDate", 1},
+                        {"participants", new BsonDocument("$map", new BsonDocument 
+                            {
+                                {"input", "$_event_participants"},
+                                {"as", "e"},
+                                {"in", new BsonDocument 
+                                    {
+                                        {"id", new BsonDocument("$toString", "$$e._id")},
+                                        {"name", "$$e.name"},
+                                        {"functions", "$$e.functions"},
+                                    }
+                                }
+                            })
+                        }
+                        // {"participants", "$_event_participants"}
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
 
-                List<BsonDocument> results = await context.Templates.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.Events.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -65,28 +88,28 @@ namespace api_camem.src.Repository
                     }),
                 ];
 
-                BsonDocument? response = await context.Templates.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                BsonDocument? response = await context.Events.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
                 dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
-                return result is null ? new(null, 404, "Template não encontrado") : new(result);
+                return result is null ? new(null, 404, "Event não encontrado") : new(result);
             }
             catch
             {
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }   
-        public async Task<ResponseApi<Template?>> GetByIdAsync(string id)
+        public async Task<ResponseApi<Event?>> GetByIdAsync(string id)
         {
             try
             {
-                Template? template = await context.Templates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                return new(template);
+                Event? evenT = await context.Events.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                return new(evenT);
             }
             catch
             {
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         } 
-        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Template> pagination)
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Event> pagination)
         {
             try
             {
@@ -108,7 +131,7 @@ namespace api_camem.src.Repository
                     new("$sort", pagination.PipelineSort),
                 };
 
-                List<BsonDocument> results = await context.Templates.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.Events.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -117,7 +140,7 @@ namespace api_camem.src.Repository
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
-        public async Task<int> GetCountDocumentsAsync(PaginationUtil<Template> pagination)
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<Event> pagination)
         {
             List<BsonDocument> pipeline = new()
             {
@@ -134,19 +157,19 @@ namespace api_camem.src.Repository
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.Templates.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<BsonDocument> results = await context.Events.Aggregate<BsonDocument>(pipeline).ToListAsync();
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         #endregion
         
         #region CREATE
-        public async Task<ResponseApi<Template?>> CreateAsync(Template template)
+        public async Task<ResponseApi<Event?>> CreateAsync(Event evenT)
         {
             try
             {
-                await context.Templates.InsertOneAsync(template);
+                await context.Events.InsertOneAsync(evenT);
 
-                return new(template, 201, "Template criada com sucesso");
+                return new(evenT, 201, "Evento criada com sucesso");
             }
             catch
             {
@@ -156,13 +179,13 @@ namespace api_camem.src.Repository
         #endregion
         
         #region UPDATE
-        public async Task<ResponseApi<Template?>> UpdateAsync(Template template)
+        public async Task<ResponseApi<Event?>> UpdateAsync(Event evenT)
         {
             try
             {
-                await context.Templates.ReplaceOneAsync(x => x.Id == template.Id, template);
+                await context.Events.ReplaceOneAsync(x => x.Id == evenT.Id, evenT);
 
-                return new(template, 201, "Template atualizada com sucesso");
+                return new(evenT, 201, "Evento atualizada com sucesso");
             }
             catch
             {
@@ -172,20 +195,20 @@ namespace api_camem.src.Repository
         #endregion
         
         #region DELETE
-        public async Task<ResponseApi<Template>> DeleteAsync(DeleteDTO request)
+        public async Task<ResponseApi<Event>> DeleteAsync(DeleteDTO request)
         {
             try
             {
-                Template? template = await context.Templates.Find(x => x.Id == request.Id && !x.Deleted).FirstOrDefaultAsync();
-                if(template is null) return new(null, 404, "Template não encontrado");
+                Event? evenT = await context.Events.Find(x => x.Id == request.Id && !x.Deleted).FirstOrDefaultAsync();
+                if(evenT is null) return new(null, 404, "Event não encontrado");
                 
-                template.Deleted = true;
-                template.DeletedAt = DateTime.UtcNow;
-                template.DeletedBy = request.DeletedBy;
+                evenT.Deleted = true;
+                evenT.DeletedAt = DateTime.UtcNow;
+                evenT.DeletedBy = request.DeletedBy;
 
-                await context.Templates.ReplaceOneAsync(x => x.Id == request.Id, template);
+                await context.Events.ReplaceOneAsync(x => x.Id == request.Id, evenT);
 
-                return new(template, 204, "Template excluída com sucesso");
+                return new(evenT, 204, "Evento excluída com sucesso");
             }
             catch
             {

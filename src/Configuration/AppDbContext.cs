@@ -39,6 +39,11 @@ namespace api_camem.src.Configuration
         public IMongoCollection<Supplier> Suppliers => Database.GetCollection<Supplier>("suppliers");
         #endregion
 
+        #region EVENTS
+        public IMongoCollection<Event> Events => Database.GetCollection<Event>("events");
+        public IMongoCollection<EventParticipant> EventParticipants => Database.GetCollection<EventParticipant>("event_participants");
+        #endregion
+
         #region FINANCIAL
         public IMongoCollection<PaymentMethod> PaymentMethods => Database.GetCollection<PaymentMethod>("payment_methods");
         public IMongoCollection<AccountReceivable> AccountsReceivable => Database.GetCollection<AccountReceivable>("accounts_receivable");

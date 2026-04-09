@@ -23,6 +23,14 @@ namespace api_camem.src.Configuration
             CreateMap<UpdateSupplierDTO, Supplier>().ReverseMap(); 
             #endregion
 
+            #region EVENT
+            CreateMap<CreateEventDTO, Event>().ReverseMap();
+            CreateMap<UpdateEventDTO, Event>().ReverseMap();
+            
+            CreateMap<CreateEventParticipantDTO, EventParticipant>().ReverseMap();
+            CreateMap<UpdateEventParticipantDTO, EventParticipant>().ReverseMap();
+            #endregion
+
             #region FINANCIAL
             CreateMap<CreateAccountReceivableDTO, AccountReceivable>().ReverseMap();
             CreateMap<UpdateAccountReceivableDTO, AccountReceivable>().ReverseMap();
