@@ -27,5 +27,8 @@ namespace api_camem.src.Models
         
         [BsonElement("userIds")]
         public List<string> UserIds {get;set;} = [];
+
+        [BsonElement("keyCertificate")]
+        public string KeyCertificate {get;set;} = string.Empty;       
     }
 }

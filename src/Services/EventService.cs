@@ -114,6 +114,7 @@ namespace api_camem.src.Services
                 
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
                 eventResponse.Data.Status = "Publicado";
+                eventResponse.Data.KeyCertificate = Guid.NewGuid().ToString();
 
                 ResponseApi<List<EventParticipant>> eventParticipants = await eventParticipantRepository.GetAllByEventIdAsync(request.Id);
                 if(eventParticipants.Data is null) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
@@ -141,12 +142,18 @@ namespace api_camem.src.Services
                                 functionName = functions.Count == 0 ? "Sem função" : functions[0];
                             }
 
-                            await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), "Presidente", hours.ToString()));
+                            string endDate = "";
+                            if(eventResponse.Data.EndDate is not null)
+                            {
+                                endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
+                            }
+
+                            await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
                         }
                     }
                 }
 
-                return new(response.Data, 200, "Atualizado com sucesso");
+                return new(response.Data, 200, "Evento Finalizado com sucesso");
             }
             catch(Exception ex)
             {
@@ -179,8 +186,8 @@ namespace api_camem.src.Services
                             {
                                 if(!eventParticipant.Functions.Where(x => x.IsPresence).Any())
                                 {
-                                    List<string> functions = eventParticipant.Functions.Select(x => x.Name).ToList();
-                                    decimal hours = eventParticipant.Functions.Sum(x => x.Hours);
+                                    List<string> functions = eventParticipant.Functions.Where(x => x.IsPresence).Select(x => x.Name).ToList();
+                                    decimal hours = eventParticipant.Functions.Where(x => x.IsPresence).Sum(x => x.Hours);
                                     string functionName = "";
                                     if(functions.Count > 1)
                                     {
@@ -191,7 +198,13 @@ namespace api_camem.src.Services
                                         functionName = functions.Count == 0 ? "Sem função" : functions[0];
                                     }
 
-                                    await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), "Presidente", hours.ToString()));
+                                    string endDate = "";
+                                    if(eventResponse.Data.EndDate is not null)
+                                    {
+                                        endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
+                                    }
+
+                                    await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
                                 }
                             }
                         }
