@@ -3,6 +3,7 @@ using api_camem.src.Interfaces;
 using api_camem.src.Models;
 using api_camem.src.Models.Base;
 using api_camem.src.Shared.DTOs;
+using api_camem.src.Shared.Templates;
 using api_camem.src.Shared.Utils;
 using AutoMapper;
 
@@ -11,6 +12,10 @@ namespace api_camem.src.Services
     public class EventService
     (
         IEventRepository repository,
+        IEventParticipantRepository eventParticipantRepository,
+        IUserRepository userRepository,
+        MailHandler mailHandler,
+        MailTemplate mailTemplate,
         IMapper _mapper
     ) : IEventService
     {
@@ -93,6 +98,106 @@ namespace api_camem.src.Services
 
                 ResponseApi<Event?> response = await repository.UpdateAsync(evenT);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+                return new(response.Data, 200, "Atualizado com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<Event?>> PublishAsync(UpdateEventDTO request)
+        {
+            try
+            {
+                ResponseApi<Event?> eventResponse = await repository.GetByIdAsync(request.Id);
+                if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+                
+                eventResponse.Data.UpdatedAt = DateTime.UtcNow;
+                eventResponse.Data.Status = "Publicado";
+
+                ResponseApi<List<EventParticipant>> eventParticipants = await eventParticipantRepository.GetAllByEventIdAsync(request.Id);
+                if(eventParticipants.Data is null) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
+                if(eventParticipants.Data.Count == 0) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
+
+                ResponseApi<Event?> response = await repository.UpdateAsync(eventResponse.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+                
+                foreach (EventParticipant eventParticipant in eventParticipants.Data)
+                {
+                    if(!string.IsNullOrEmpty(eventParticipant.UserId))
+                    {
+                        ResponseApi<User?> user = await userRepository.GetByIdAsync(eventParticipant.UserId);
+                        if(user.Data is not null)
+                        {
+                            List<string> functions = eventParticipant.Functions.Select(x => x.Name).ToList();
+                            decimal hours = eventParticipant.Functions.Sum(x => x.Hours);
+                            string functionName = "";
+                            if(functions.Count > 1)
+                            {
+                                functionName = $"{functions.Count} funções";
+                            }
+                            else
+                            {
+                                functionName = functions.Count == 0 ? "Sem função" : functions[0];
+                            }
+
+                            await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), "Presidente", hours.ToString()));
+                        }
+                    }
+                }
+
+                return new(response.Data, 200, "Atualizado com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<Event?>> FinishAsync(UpdateEventDTO request)
+        {
+            try
+            {
+                ResponseApi<Event?> eventResponse = await repository.GetByIdAsync(request.Id);
+                if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+                
+                eventResponse.Data.UpdatedAt = DateTime.UtcNow;
+                eventResponse.Data.Status = "Finalizado";
+
+                ResponseApi<List<EventParticipant>> eventParticipants = await eventParticipantRepository.GetAllByEventIdAsync(request.Id);
+
+                ResponseApi<Event?> response = await repository.UpdateAsync(eventResponse.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+                
+                if(eventParticipants.Data is not null)
+                {
+                    foreach (EventParticipant eventParticipant in eventParticipants.Data)
+                    {
+                        if(!string.IsNullOrEmpty(eventParticipant.UserId))
+                        {
+                            ResponseApi<User?> user = await userRepository.GetByIdAsync(eventParticipant.UserId);
+                            if(user.Data is not null)
+                            {
+                                if(!eventParticipant.Functions.Where(x => x.IsPresence).Any())
+                                {
+                                    List<string> functions = eventParticipant.Functions.Select(x => x.Name).ToList();
+                                    decimal hours = eventParticipant.Functions.Sum(x => x.Hours);
+                                    string functionName = "";
+                                    if(functions.Count > 1)
+                                    {
+                                        functionName = $"{functions.Count} funções";
+                                    }
+                                    else
+                                    {
+                                        functionName = functions.Count == 0 ? "Sem função" : functions[0];
+                                    }
+
+                                    await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), "Presidente", hours.ToString()));
+                                }
+                            }
+                        }
+                    }
+                }
+
                 return new(response.Data, 200, "Atualizado com sucesso");
             }
             catch(Exception ex)

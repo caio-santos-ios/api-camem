@@ -101,7 +101,19 @@ namespace api_camem.src.Repository
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         } 
-        public async Task<ResponseApi<EventParticipant?>> GetByUserIdAsync(string userId, string id)
+        public async Task<ResponseApi<List<EventParticipant>>> GetAllByEventIdAsync(string eventId)
+        {
+            try
+            {
+                List<EventParticipant> eventParticipants = await context.EventParticipants.Find(x => x.EventId == eventId && !x.Deleted).ToListAsync();
+                return new(eventParticipants);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        } 
+        public async Task<ResponseApi<EventParticipant?>> GetByUserIdAsync(string userId, string eventId, string id)
         {
             try
             {
@@ -109,11 +121,11 @@ namespace api_camem.src.Repository
 
                 if(string.IsNullOrEmpty(id))
                 {
-                    eventParticipant = await context.EventParticipants.Find(x => x.UserId == userId && !x.Deleted).FirstOrDefaultAsync();
+                    eventParticipant = await context.EventParticipants.Find(x => x.UserId == userId && x.EventId == eventId && !x.Deleted).FirstOrDefaultAsync();
                 }
                 else
                 {
-                    eventParticipant = await context.EventParticipants.Find(x => x.UserId == userId && x.Id != id && !x.Deleted).FirstOrDefaultAsync();
+                    eventParticipant = await context.EventParticipants.Find(x => x.UserId == userId && x.EventId == eventId && x.Id != id && !x.Deleted).FirstOrDefaultAsync();
                 }
                 
                 return new(eventParticipant);

@@ -28,6 +28,12 @@ namespace api_camem.src.Models
         public string Name {get;set;} = string.Empty;        
         
         [BsonElement("hours")]
-        public decimal Hours {get;set;} = 0;        
+        public decimal Hours {get;set;} = 0;       
+        
+        [BsonElement("isPresence")]
+        public bool IsPresence {get;set;} = true;   
+
+        [BsonElement("notesPresence")]
+        public string NotesPresence {get;set;} = string.Empty;       
     }
 }

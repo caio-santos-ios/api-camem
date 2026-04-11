@@ -11,6 +11,8 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
         Task<ResponseApi<Event?>> CreateAsync(CreateEventDTO request);
         Task<ResponseApi<Event?>> UpdateAsync(UpdateEventDTO request);
+        Task<ResponseApi<Event?>> PublishAsync(UpdateEventDTO request);
+        Task<ResponseApi<Event?>> FinishAsync(UpdateEventDTO request);
         Task<ResponseApi<Event>> DeleteAsync(DeleteDTO request);
     }
 }

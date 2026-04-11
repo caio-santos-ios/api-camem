@@ -57,6 +57,26 @@ namespace api_camem.src.Controllers
         }
         
         [Authorize]
+        [HttpPut("publish")]
+        public async Task<IActionResult> UpdatePublish([FromBody] UpdateEventDTO body)
+        {
+            if (body == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<Event?> response = await service.PublishAsync(body);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
+        [HttpPut("finish")]
+        public async Task<IActionResult> UpdateFinish([FromBody] UpdateEventDTO body)
+        {
+            if (body == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<Event?> response = await service.FinishAsync(body);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {

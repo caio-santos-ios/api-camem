@@ -10,8 +10,9 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<EventParticipant> pagination);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<EventParticipant?>> GetByIdAsync(string id);
+        Task<ResponseApi<List<EventParticipant>>> GetAllByEventIdAsync(string eventId);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<EventParticipant> pagination);
-        Task<ResponseApi<EventParticipant?>> GetByUserIdAsync(string userId, string id);
+        Task<ResponseApi<EventParticipant?>> GetByUserIdAsync(string userId, string eventId, string id);
         Task<int> GetCountDocumentsAsync(PaginationUtil<EventParticipant> pagination);
         Task<ResponseApi<EventParticipant?>> CreateAsync(EventParticipant address);
         Task<ResponseApi<EventParticipant?>> UpdateAsync(EventParticipant address);

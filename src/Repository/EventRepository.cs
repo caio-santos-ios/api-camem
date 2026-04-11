@@ -40,6 +40,7 @@ namespace api_camem.src.Repository
                         {"status", 1},
                         {"startDate", 1},
                         {"endDate", 1},
+                        {"userIds", 1},
                         {"participants", new BsonDocument("$map", new BsonDocument 
                             {
                                 {"input", "$_event_participants"},
@@ -49,11 +50,11 @@ namespace api_camem.src.Repository
                                         {"id", new BsonDocument("$toString", "$$e._id")},
                                         {"name", "$$e.name"},
                                         {"functions", "$$e.functions"},
+                                        {"userId", "$$e.userId"},
                                     }
                                 }
                             })
                         }
-                        // {"participants", "$_event_participants"}
                     }),
                     new("$sort", pagination.PipelineSort),
                 };

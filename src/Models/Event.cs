@@ -23,6 +23,9 @@ namespace api_camem.src.Models
         public DateTime StartDate {get;set;}
 
         [BsonElement("endDate")]
-        public DateTime? EndDate {get;set;}        
+        public DateTime? EndDate {get;set;}   
+        
+        [BsonElement("userIds")]
+        public List<string> UserIds {get;set;} = [];
     }
 }

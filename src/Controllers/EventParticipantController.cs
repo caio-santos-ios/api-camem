@@ -57,6 +57,16 @@ namespace api_camem.src.Controllers
         }
         
         [Authorize]
+        [HttpPut("presence")]
+        public async Task<IActionResult> UpdatePresence([FromBody] UpdateEventParticipantDTO body)
+        {
+            if (body == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<EventParticipant?> response = await service.UpdatePresenceAsync(body);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
