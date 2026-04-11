@@ -85,9 +85,20 @@ namespace api_camem.src.Services
 
                 if (!request.PrivacyPolicy) return new(null, 400, "Aceitar os Termos e Condições e nossa Política de Privacidade é obrigatório");
                 
-                ResponseApi<User?> isEmail = await userRepository.GetByEmailAsync(request.Email);
+                ResponseApi<User?> isEmail = await userRepository.GetByEmailExistedAsync(request.Email, "");
                 if(isEmail.Data is not null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
 
+                if(request.TypeAccess) 
+                {
+                    ResponseApi<User?> cpfExisted = await userRepository.GetByCpfAsync(request.Cpf, "");
+                    if(cpfExisted.Data is not null) return new(null, 400, "CPF inválido, já existe um usário cadastrado.");
+                }
+                else 
+                {
+                    ResponseApi<User?> raExisted = await userRepository.GetByRaAsync(request.RA, "");
+                    if(raExisted.Data is not null) return new(null, 400, "RA inválido, já existe um usário cadastrado.");
+                }
+                
                 if(Validator.IsReliable(request.Password).Equals("Ruim")) return new(null, 400, $"Senha é muito fraca");
 
                 dynamic access = Util.GenerateCodeAccess(5);
@@ -130,7 +141,7 @@ namespace api_camem.src.Services
                 ResponseApi<List<User>> staff = await userRepository.GetUsersNotificatedAsync();
                 if(staff.Data is not null)
                 {
-                    List<string> staffIds = staff.Data.Select(u => u.Id).ToList();
+                    List<string> staffIds = staff.Data.Where(u => u.Id != user.Id && u.StatusAccess == "Aprovado").Select(u => u.Id).ToList();
 
                     if (staffIds.Count > 0)
                     {
@@ -364,8 +375,11 @@ namespace api_camem.src.Services
                 new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("type", refresh ? "refresh" : "access"),
+                new Claim("role", user.Role.ToString()),
                 new Claim("name", user.Name),
-                new Claim("role", user.Role.ToString())
+                new Claim("photo", user.Photo),
+                new Claim("admin", user.Admin.ToString()),
+                new Claim("master", user.Master.ToString())
             ];
 
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);

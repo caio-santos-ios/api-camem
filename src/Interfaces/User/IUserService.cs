@@ -10,6 +10,7 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetCountAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<dynamic?>> GetLoggedAsync(string id);
+        Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
         Task<ResponseApi<User?>> CreateAsync(CreateUserDTO user);
         Task<ResponseApi<User?>> UpdateAsync(UpdateUserDTO user);
         Task<ResponseApi<User?>> UpdateStatusAccessAsync(UpdateUserStatusAccessDTO user);

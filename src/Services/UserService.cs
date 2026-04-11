@@ -26,6 +26,19 @@ namespace api_camem.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
         }
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request)
+        {
+            try
+            {
+                PaginationUtil<User> pagination = new(request.QueryParams);
+                ResponseApi<List<dynamic>> users = await userRepository.GetSelectAsync(pagination);
+                return new(users.Data, 200, "Usuários listados com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
         
         public async Task<ResponseApi<List<dynamic>>> GetCountAsync(GetAllDTO request)
         {
@@ -76,8 +89,14 @@ namespace api_camem.src.Services
         {
             try
             {
-                ResponseApi<User?> isEmail = await userRepository.GetByEmailAsync(request.Email);
+                ResponseApi<User?> isEmail = await userRepository.GetByEmailExistedAsync(request.Email, "");
                 if(isEmail.Data is not null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido.");
+
+                ResponseApi<User?> cpfExisted = await userRepository.GetByCpfAsync(request.Cpf, "");
+                if(cpfExisted.Data is not null) return new(null, 400, "CPF inválido, já existe um usário cadastrado.");
+                
+                ResponseApi<User?> raExisted = await userRepository.GetByRaAsync(request.RA, "");
+                if(raExisted.Data is not null) return new(null, 400, "RA inválido, já existe um usário cadastrado.");
 
                 ResponseApi<ProfileUser?> profile = await profileUserRepository.GetByIdAsync(request.ProfileUserId);
 
@@ -90,14 +109,19 @@ namespace api_camem.src.Services
                     UserName = $"usuário{access.CodeAccess}",
                     Email = request.Email,
                     Name = request.Name,
-                    Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    // Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Password = "",
                     CodeAccess = "",
                     CodeAccessExpiration = null,
                     ValidatedAccess = true,
                     Modules = profile.Data.Modules,
-                    Admin = request.Admin,
+                    Admin = false,
                     Blocked = request.Blocked,
                     ProfileUserId = request.ProfileUserId,
+                    StatusAccess = "Pendente",
+                    Approved = false,
+                    Cpf = request.Cpf,
+                    RA = request.RA
                 };
 
                 ResponseApi<User?> response = await userRepository.CreateAsync(user);
@@ -134,6 +158,16 @@ namespace api_camem.src.Services
                 ResponseApi<User?> user = await userRepository.GetByIdAsync(request.Id);
                 
                 if(user.Data is null || !Validator.IsEmail(request.Email)) return new(null, 404, "Falha ao atualizar");
+                
+                ResponseApi<User?> isEmail = await userRepository.GetByEmailExistedAsync(request.Email, request.Id);
+                if(isEmail.Data is not null || !Validator.IsEmail(request.Email)) return new(null, 400, "E-mail inválido, já existe um usário cadastrado.");
+
+                ResponseApi<User?> cpfExisted = await userRepository.GetByCpfAsync(request.Cpf, request.Id);
+                if(cpfExisted.Data is not null) return new(null, 400, "CPF inválido, já existe um usário cadastrado.");
+                
+                ResponseApi<User?> raExisted = await userRepository.GetByRaAsync(request.RA, request.Id);
+                if(raExisted.Data is not null) return new(null, 400, "RA inválido, já existe um usário cadastrado.");
+                
                 if(request.ProfileUserId != user.Data.ProfileUserId)
                 {
                     ResponseApi<ProfileUser?> newProfile = await profileUserRepository.GetByIdAsync(request.ProfileUserId);
@@ -143,14 +177,12 @@ namespace api_camem.src.Services
                     user.Data.ProfileUserId = request.ProfileUserId;
                 }
 
-                if(!string.IsNullOrEmpty(request.Password))
-                {
-                    user.Data.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
-                }
-
                 user.Data.UpdatedAt = DateTime.UtcNow;
                 user.Data.Email = request.Email;
                 user.Data.Name = request.Name;
+                user.Data.RA = request.RA;
+                user.Data.Cpf = request.Cpf;
+                user.Data.Blocked = request.Blocked;
 
                 ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
