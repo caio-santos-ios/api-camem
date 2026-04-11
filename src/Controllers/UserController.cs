@@ -29,6 +29,14 @@ namespace api_camem.src.Controllers
         }
         
         [Authorize]
+        [HttpGet("select")]
+        public async Task<IActionResult> GetSelect()
+        {
+            ResponseApi<List<dynamic>> response = await service.GetSelectAsync(new(Request.Query));
+            return StatusCode(response.StatusCode, new { response.Message, response.Result });
+        }
+        
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {

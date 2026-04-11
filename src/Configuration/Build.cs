@@ -43,6 +43,12 @@ namespace api_camem.src.Configuration
             builder.Services.AddTransient<ISupplierService, SupplierService>();
             builder.Services.AddTransient<ISupplierRepository, SupplierRepository>();
 
+            // EVENT
+            builder.Services.AddTransient<IEventService, EventService>();
+            builder.Services.AddTransient<IEventRepository, EventRepository>();
+            builder.Services.AddTransient<IEventParticipantService, EventParticipantService>();
+            builder.Services.AddTransient<IEventParticipantRepository, EventParticipantRepository>();
+
             // FINANCIAL
             builder.Services.AddTransient<IAccountReceivableService, AccountReceivableService>();
             builder.Services.AddTransient<IAccountReceivableRepository, AccountReceivableRepository>();

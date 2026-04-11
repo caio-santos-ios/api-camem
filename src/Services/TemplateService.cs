@@ -145,6 +145,10 @@ namespace api_camem.src.Services
                     case "NEW_ACCOUNT":
                         await mailHandler.SendMailAsync(userResponse.Data.Email, "Novo usuário aguardando aprovação", await mailTemplate.NewAccount(userResponse.Data.Name, userResponse.Data.Name, userResponse.Data.Email, userResponse.Data.CreatedAt.ToString("dd/MM/yyyy")));
                         break;
+                    
+                    case "EVENT_PUBLISHED":
+                        await mailHandler.SendMailAsync(userResponse.Data.Email, "Novo Evento", await mailTemplate.EventPublish(userResponse.Data.Name, "Feira de Ciências", userResponse.Data.CreatedAt.ToString("dd/MM/yyyy"), userResponse.Data.CreatedAt.ToString("dd/MM/yyyy"), "Presidente", "180"));
+                        break;
 
                     default:
                         return new(null, 400, "Template não encontrado");

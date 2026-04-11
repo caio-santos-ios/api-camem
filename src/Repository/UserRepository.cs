@@ -44,7 +44,6 @@ namespace api_camem.src.Repository
                         {"profileUserName", MongoUtil.First("_profile_user.name")},
                     }),
 
-
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -56,6 +55,48 @@ namespace api_camem.src.Repository
                         {"photo", 1},
                         {"createdAt", 1},
                         {"statusAccess", 1},
+                        {"ra", 1},
+                        {"cpf", 1},
+                        {"profileUserName", 1}
+                    }),
+                    new("$sort", pagination.PipelineSort),
+                };
+
+                List<BsonDocument> results = await context.Users.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+                return new(list);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<User> pagination)
+        {
+            try
+            {
+                List<BsonDocument> pipeline = new()
+                {
+                    new("$match", pagination.PipelineFilter),
+                    new("$sort", pagination.PipelineSort),
+                    new("$skip", pagination.Skip),
+                    new("$limit", pagination.Limit),
+
+                    MongoUtil.Lookup("profile_users", ["$profileUserId"], ["$_id"], "_profile_user", [["deleted", false]], 1),
+                    
+                    new("$addFields", new BsonDocument {
+                        {"profileUserName", MongoUtil.First("_profile_user.name")},
+                    }),
+
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"name", 1},
+                        {"createdAt", 1},
+                        {"role", 1},
+                        {"ra", 1},
+                        {"cpf", 1},
                         {"profileUserName", 1}
                     }),
                     new("$sort", pagination.PipelineSort),
@@ -209,6 +250,71 @@ namespace api_camem.src.Repository
             try
             {
                 User? user = await context.Users.Find(x => x.Email == email && !x.Deleted).FirstOrDefaultAsync();
+                return new(user);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<User?>> GetByEmailExistedAsync(string email, string id)
+        {
+            try
+            {
+                User? user = null;
+                
+                if(string.IsNullOrEmpty(id))
+                {
+                    user = await context.Users.Find(x => x.Email == email && !x.Deleted).FirstOrDefaultAsync();
+                }
+                else
+                {
+                    user = await context.Users.Find(x => x.Email == email && x.Id != id && !x.Deleted).FirstOrDefaultAsync();
+                }
+
+                return new(user);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<User?>> GetByRaAsync(string ra, string id)
+        {
+            try
+            {
+                User? user = null;
+                
+                if(string.IsNullOrEmpty(id))
+                {
+                    user = await context.Users.Find(x => x.RA == ra && !x.Deleted).FirstOrDefaultAsync();
+                }
+                else
+                {
+                    user = await context.Users.Find(x => x.RA == ra && x.Id != id && !x.Deleted).FirstOrDefaultAsync();
+                }
+                return new(user);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<User?>> GetByCpfAsync(string cpf, string id)
+        {
+            try
+            {
+                User? user = null;
+                
+                if(string.IsNullOrEmpty(id))
+                {
+                    user = await context.Users.Find(x => x.Cpf == cpf && !x.Deleted).FirstOrDefaultAsync();
+                }
+                else
+                {
+                    user = await context.Users.Find(x => x.Cpf == cpf && x.Id != id && !x.Deleted).FirstOrDefaultAsync();
+                }
+
                 return new(user);
             }
             catch
