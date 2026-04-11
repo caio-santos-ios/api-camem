@@ -79,7 +79,7 @@ namespace api_camem.src.Services
                     await eventRepository.UpdateAsync(evenT.Data);
                 }
 
-                return new(response.Data, 201, "Participante criada com sucesso.");
+                return new(response.Data, 201, "Participante criado com sucesso.");
             }
             catch
             { 

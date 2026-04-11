@@ -16,6 +16,7 @@ namespace api_camem.src.Services
         IUserRepository userRepository,
         MailHandler mailHandler,
         MailTemplate mailTemplate,
+        INotificationService notificationService,
         IMapper _mapper
     ) : IEventService
     {
@@ -114,7 +115,7 @@ namespace api_camem.src.Services
                 
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
                 eventResponse.Data.Status = "Publicado";
-                eventResponse.Data.KeyCertificate = Guid.NewGuid().ToString();
+                eventResponse.Data.KeyCertificate = Guid.NewGuid().ToString("N");
 
                 ResponseApi<List<EventParticipant>> eventParticipants = await eventParticipantRepository.GetAllByEventIdAsync(request.Id);
                 if(eventParticipants.Data is null) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
@@ -148,9 +149,22 @@ namespace api_camem.src.Services
                                 endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
                             }
 
-                            await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                            await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
                         }
                     }
+                }
+
+                List<string> userIds = eventParticipants.Data.Select(u => u.UserId).ToList();
+                if (userIds.Count > 0)
+                {
+                    await notificationService.SendToManyAsync(userIds, new()
+                    {
+                        Link      = $"/events",
+                        Title     = "Novo evento",
+                        Message   = $"Você foi adicionado em um novo evento.",
+                        Type      = "Notificacao",
+                        CreatedBy = request.CreatedBy
+                    });
                 }
 
                 return new(response.Data, 200, "Evento Finalizado com sucesso");
@@ -175,6 +189,7 @@ namespace api_camem.src.Services
                 ResponseApi<Event?> response = await repository.UpdateAsync(eventResponse.Data);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
                 
+                List<string> userIds = [];
                 if(eventParticipants.Data is not null)
                 {
                     foreach (EventParticipant eventParticipant in eventParticipants.Data)
@@ -184,8 +199,9 @@ namespace api_camem.src.Services
                             ResponseApi<User?> user = await userRepository.GetByIdAsync(eventParticipant.UserId);
                             if(user.Data is not null)
                             {
-                                if(!eventParticipant.Functions.Where(x => x.IsPresence).Any())
+                                if(eventParticipant.Functions.Where(x => x.IsPresence).Any())
                                 {
+                                    userIds.Add(user.Data.Id);
                                     List<string> functions = eventParticipant.Functions.Where(x => x.IsPresence).Select(x => x.Name).ToList();
                                     decimal hours = eventParticipant.Functions.Where(x => x.IsPresence).Sum(x => x.Hours);
                                     string functionName = "";
@@ -204,14 +220,26 @@ namespace api_camem.src.Services
                                         endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
                                     }
 
-                                    await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventParticipant.Name, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                                    await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
                                 }
                             }
                         }
                     }
                 }
 
-                return new(response.Data, 200, "Atualizado com sucesso");
+                if (userIds.Count > 0)
+                {
+                    await notificationService.SendToManyAsync(userIds, new()
+                    {
+                        Link      = $"/my-certificates",
+                        Title     = "Novo Certificado",
+                        Message   = $"Você tem um novo certificado.",
+                        Type      = "Notificacao",
+                        CreatedBy = request.CreatedBy
+                    });
+                }
+
+                return new(response.Data, 200, "Evento finalizado com sucesso");
             }
             catch(Exception ex)
             {

@@ -125,7 +125,14 @@ namespace api_camem.src.Shared.Templates
                 .Replace("{{hours}}", hours)
                 .Replace("{{start_date}}", startDate);
 
-                if(!string.IsNullOrEmpty(endDate)) html = html.Replace("{{end_date}}", endDate);
+                if(!string.IsNullOrEmpty(endDate))
+                {
+                    html = html.Replace("{{end_date}}", endDate);
+                } 
+                else
+                {
+                    html = html.Replace("{{end_date}}", "");
+                }
             }
             
 
@@ -133,7 +140,7 @@ namespace api_camem.src.Shared.Templates
         }
         public async Task<string> EventFinish(string name, string nameEvent, string startDate, string endDate, string functions, string hours)
         {
-            Template? templates = await context.Templates.Find(x => x.Code == "NEW_CERTIFICATE" && !x.Deleted).FirstOrDefaultAsync();
+            Template? templates = await context.Templates.Find(x => x.Code == "EVENT_FINISHED" && !x.Deleted).FirstOrDefaultAsync();
 
             string html = name;
             
@@ -144,9 +151,17 @@ namespace api_camem.src.Shared.Templates
                 .Replace("{{name_event}}", nameEvent)
                 .Replace("{{functions}}", functions)
                 .Replace("{{hours}}", hours)
-                .Replace("{{start_date}}", startDate);
+                .Replace("{{start_date}}", startDate)
+                .Replace("{{ui_uri}}", UiURI);
 
-                if(!string.IsNullOrEmpty(endDate)) html = html.Replace("{{end_date}}", endDate);
+                if(!string.IsNullOrEmpty(endDate))
+                {
+                    html = html.Replace("{{end_date}}", endDate);
+                } 
+                else
+                {
+                    html = html.Replace("{{end_date}}", "");
+                }
             }
             
 

@@ -149,6 +149,10 @@ namespace api_camem.src.Services
                     case "EVENT_PUBLISHED":
                         await mailHandler.SendMailAsync(userResponse.Data.Email, "Novo Evento", await mailTemplate.EventPublish(userResponse.Data.Name, "Feira de Ciências", userResponse.Data.CreatedAt.ToString("dd/MM/yyyy"), userResponse.Data.CreatedAt.ToString("dd/MM/yyyy"), "Presidente", "180"));
                         break;
+                    
+                    case "EVENT_FINISHED":
+                        await mailHandler.SendMailAsync(userResponse.Data.Email, "Novo Certificado", await mailTemplate.EventPublish(userResponse.Data.Name, "Feira de Ciências", userResponse.Data.CreatedAt.ToString("dd/MM/yyyy"), userResponse.Data.CreatedAt.ToString("dd/MM/yyyy"), "Presidente", "180"));
+                        break;
 
                     default:
                         return new(null, 400, "Template não encontrado");
