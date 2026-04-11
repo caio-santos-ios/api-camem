@@ -30,6 +30,11 @@ namespace api_camem.src.Configuration
             CreateMap<CreateEventParticipantDTO, EventParticipant>().ReverseMap();
             CreateMap<UpdateEventParticipantDTO, EventParticipant>().ReverseMap();
             #endregion
+            
+            #region CERTIFICATE
+            CreateMap<CreateCertificateDTO, Certificate>().ReverseMap();
+            CreateMap<UpdateCertificateDTO, Certificate>().ReverseMap();
+            #endregion
 
             #region FINANCIAL
             CreateMap<CreateAccountReceivableDTO, AccountReceivable>().ReverseMap();

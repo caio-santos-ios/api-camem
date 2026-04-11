@@ -35,8 +35,6 @@ namespace api_camem.src.Configuration
         #region MASTER DATA
         public IMongoCollection<User> Users => Database.GetCollection<User>("users");
         public IMongoCollection<ProfileUser> ProfileUsers => Database.GetCollection<ProfileUser>("profile_users");
-        public IMongoCollection<Customer> Customers => Database.GetCollection<Customer>("customers");
-        public IMongoCollection<Supplier> Suppliers => Database.GetCollection<Supplier>("suppliers");
         #endregion
 
         #region EVENTS
@@ -44,16 +42,9 @@ namespace api_camem.src.Configuration
         public IMongoCollection<EventParticipant> EventParticipants => Database.GetCollection<EventParticipant>("event_participants");
         #endregion
 
-        #region FINANCIAL
-        public IMongoCollection<PaymentMethod> PaymentMethods => Database.GetCollection<PaymentMethod>("payment_methods");
-        public IMongoCollection<AccountReceivable> AccountsReceivable => Database.GetCollection<AccountReceivable>("accounts_receivable");
-        public IMongoCollection<AccountPayable> AccountsPayable => Database.GetCollection<AccountPayable>("accounts_payable"); 
-        public IMongoCollection<ChartOfAccounts> ChartOfAccounts => Database.GetCollection<ChartOfAccounts>("chart_of_accounts");
+        #region CERTIFICATE
+        public IMongoCollection<Certificate> Certificates => Database.GetCollection<Certificate>("certificates");
         #endregion
-
-        public IMongoCollection<ServiceOrder> ServiceOrders => Database.GetCollection<ServiceOrder>("service_orders");
-        public IMongoCollection<ServiceOrderItem> ServiceOrderItems => Database.GetCollection<ServiceOrderItem>("service_order_items");
-        public IMongoCollection<Situation> Situations => Database.GetCollection<Situation>("situations");
 
         #region SETTINGS
         public IMongoCollection<Logger> Loggers => Database.GetCollection<Logger>("loggers");

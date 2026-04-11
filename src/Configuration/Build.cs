@@ -29,45 +29,21 @@ namespace api_camem.src.Configuration
             // AUTH
             builder.Services.AddTransient<IAuthService, AuthService>();
 
-            // DASHBOARD
-            builder.Services.AddTransient<IDashboardService, DashboardService>();
-            builder.Services.AddTransient<IDashboardRepository, DashboardRepository>();
-
             // MASTER DATA
             builder.Services.AddTransient<IUserService, UserService>();
             builder.Services.AddTransient<IUserRepository, UserRepository>();
             builder.Services.AddTransient<IProfileUserService, ProfileUserService>();
             builder.Services.AddTransient<IProfileUserRepository, ProfileUserRepository>();
-            builder.Services.AddTransient<ICustomerService, CustomerService>();
-            builder.Services.AddTransient<ICustomerRepository, CustomerRepository>();
-            builder.Services.AddTransient<ISupplierService, SupplierService>();
-            builder.Services.AddTransient<ISupplierRepository, SupplierRepository>();
 
             // EVENT
             builder.Services.AddTransient<IEventService, EventService>();
             builder.Services.AddTransient<IEventRepository, EventRepository>();
             builder.Services.AddTransient<IEventParticipantService, EventParticipantService>();
             builder.Services.AddTransient<IEventParticipantRepository, EventParticipantRepository>();
-
-            // FINANCIAL
-            builder.Services.AddTransient<IAccountReceivableService, AccountReceivableService>();
-            builder.Services.AddTransient<IAccountReceivableRepository, AccountReceivableRepository>();
-            builder.Services.AddTransient<IAccountPayableService, AccountPayableService>();
-            builder.Services.AddTransient<IAccountPayableRepository, AccountPayableRepository>();
-            builder.Services.AddTransient<IChartOfAccountsRepository, ChartOfAccountsRepository>();
-            builder.Services.AddTransient<IChartOfAccountsService, ChartOfAccountsService>();
-            builder.Services.AddTransient<IDreRepository, DreRepository>();
-            builder.Services.AddTransient<IDreService, DreService>();
-            builder.Services.AddTransient<IPaymentMethodRepository, PaymentMethodRepository>();
-            builder.Services.AddTransient<IPaymentMethodService, PaymentMethodService>();
-
-            // OS
-            builder.Services.AddTransient<IServiceOrderService, ServiceOrderService>();
-            builder.Services.AddTransient<IServiceOrderRepository, ServiceOrderRepository>();
-            builder.Services.AddTransient<IServiceOrderItemService, ServiceOrderItemService>();
-            builder.Services.AddTransient<IServiceOrderItemRepository, ServiceOrderItemRepository>();
-            builder.Services.AddTransient<ISituationService, SituationService>();
-            builder.Services.AddTransient<ISituationRepository, SituationRepository>();
+            
+            // CERTIFICATE
+            builder.Services.AddTransient<ICertificateService, CertificateService>();
+            builder.Services.AddTransient<ICertificateRepository, CertificateRepository>();
 
             // SETTINGS
             builder.Services.AddScoped<ILoggerService, LoggerService>();
@@ -84,19 +60,19 @@ namespace api_camem.src.Configuration
             builder.Services.AddTransient<IChatService, ChatService>();
             builder.Services.AddTransient<IChatRepository, ChatRepository>();
 
-            // Handlers
+            // HANDLER
             builder.Services.AddTransient<SmsHandler>();
             builder.Services.AddTransient<MailHandler>();
             builder.Services.AddTransient<UploadHandler>();
             builder.Services.AddTransient<CountHandler>();
 
-            // Templates
+            // TEMPLATE
             builder.Services.AddTransient<MailTemplate>();
 
-            // AutoMapper
+            // AUTOMAPPER
             builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
-            // Cloudinary
+            // CLOUDINARY
             Account account = new(
                 Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME"),
                 Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY"),
@@ -104,13 +80,13 @@ namespace api_camem.src.Configuration
             );
             builder.Services.AddSingleton(new Cloudinary(account));
 
-            // SignalR
+            // SIGNALR SignalR
             builder.Services.AddSignalR();
 
-            // LoggerActionFilter — grava log automaticamente no final de cada requisição
+            // LOGGER ACTION FILTRO
             builder.Services.AddScoped<LoggerActionFilter>();
             
-            // Work
+            // WORK
             builder.Services.AddHostedService<FinancialWork>();
         }
     }
