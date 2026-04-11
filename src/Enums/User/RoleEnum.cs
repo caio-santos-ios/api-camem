@@ -6,6 +6,7 @@ namespace api_camem.src.Enums.User
         Teacher,
         Director,
         Coordinator,
+        Manager,
         Admin,
         Master
     }
