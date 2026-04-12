@@ -8,6 +8,7 @@ namespace api_camem.src.Interfaces
     {
         Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Certificate> pagination);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
+        Task<ResponseApi<dynamic?>> GetValidateKeyAsync(string keyCertificate);
         Task<ResponseApi<Certificate?>> GetByIdAsync(string id);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Certificate> pagination);
         Task<int> GetCountDocumentsAsync(PaginationUtil<Certificate> pagination);

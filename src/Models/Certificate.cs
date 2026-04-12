@@ -24,5 +24,8 @@ namespace api_camem.src.Models
 
         [BsonElement("hours")]
         public decimal Hours { get; set; } = 0;
+        
+        [BsonElement("keyCertificate")]
+        public string KeyCertificate {get;set;} = string.Empty;    
     }
 }

@@ -379,7 +379,11 @@ namespace api_camem.src.Services
                 new Claim("name", user.Name),
                 new Claim("photo", user.Photo),
                 new Claim("admin", user.Admin.ToString()),
-                new Claim("master", user.Master.ToString())
+                new Claim("master", user.Master.ToString()),
+                new Claim("cpf", user.Cpf),
+                new Claim("blocked", user.Blocked.ToString()),
+                new Claim("ra", user.RA),
+                new Claim("statusAccess", user.StatusAccess),
             ];
 
             SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);

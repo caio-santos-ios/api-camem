@@ -17,6 +17,7 @@ namespace api_camem.src.Services
         MailHandler mailHandler,
         MailTemplate mailTemplate,
         INotificationService notificationService,
+        ICertificateService certificateService,
         IMapper _mapper
     ) : IEventService
     {
@@ -221,6 +222,16 @@ namespace api_camem.src.Services
                                     }
 
                                     await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                                    var res = await certificateService.CreateAsync(new ()
+                                    {
+                                        Name = eventResponse.Data.Title,
+                                        EventId = eventResponse.Data.Id,
+                                        UserId = eventParticipant.UserId,
+                                        Functions = functions,
+                                        Hours = hours,
+                                        KeyCertificate = eventResponse.Data.KeyCertificate,
+                                        CreatedBy = request.CreatedBy
+                                    });
                                 }
                             }
                         }

@@ -4,7 +4,6 @@ using api_camem.src.Interfaces;
 using api_camem.src.Repository;
 using api_camem.src.Services;
 using api_camem.src.Shared.Templates;
-using api_camem.src.Workers;
 using CloudinaryDotNet;
 
 namespace api_camem.src.Configuration
@@ -85,9 +84,6 @@ namespace api_camem.src.Configuration
 
             // LOGGER ACTION FILTRO
             builder.Services.AddScoped<LoggerActionFilter>();
-            
-            // WORK
-            builder.Services.AddHostedService<FinancialWork>();
         }
     }
 }

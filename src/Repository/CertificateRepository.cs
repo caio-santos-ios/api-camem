@@ -23,13 +23,31 @@ namespace api_camem.src.Repository
                     new("$sort", pagination.PipelineSort),
                     new("$skip", pagination.Skip),
                     new("$limit", pagination.Limit),
+
+                    MongoUtil.Lookup("events", ["$eventId"], ["$_id"], "_event", [["deleted", false]], 1),
+                    MongoUtil.Lookup("users", ["$userId"], ["$_id"], "_user", [["deleted", false]], 1),
+                    MongoUtil.Lookup("event_participants", ["$userId"], ["$userId"], "_event_participant", [["deleted", false]], 1),
+
                     new("$addFields", new BsonDocument
                     {
                         {"id", new BsonDocument("$toString", "$_id")},
+                        {"nameEvent", MongoUtil.First("_event.title")},
+                        {"startDate", MongoUtil.First("_event.startDate")},
+                        {"endDate", MongoUtil.First("_event.endDate")},
+                        {"name", MongoUtil.First("_user.name")},
                     }),
+                    
                     new("$project", new BsonDocument
                     {
-                        {"_id", 0}, 
+                        {"_id", 0},
+                        {"id", 1},
+                        {"startDate", 1},
+                        {"endDate", 1},
+                        {"hours", 1},
+                        {"nameEvent", 1},
+                        {"name", 1},
+                        {"keyCertificate", 1},
+                        {"functions", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
@@ -59,6 +77,51 @@ namespace api_camem.src.Repository
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
+                    }),
+                ];
+
+                BsonDocument? response = await context.Certificates.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
+                return result is null ? new(null, 404, "Certificado não encontrado") : new(result);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
+        public async Task<ResponseApi<dynamic?>> GetValidateKeyAsync(string keyCertificate)
+        {
+            try
+            {
+                BsonDocument[] pipeline = [
+                    new("$match", new BsonDocument{
+                        {"keyCertificate", keyCertificate},
+                        {"deleted", false}
+                    }),
+                    
+                    MongoUtil.Lookup("events", ["$eventId"], ["$_id"], "_event", [["deleted", false]], 1),
+                    MongoUtil.Lookup("users", ["$userId"], ["$_id"], "_user", [["deleted", false]], 1),
+                    MongoUtil.Lookup("event_participants", ["$userId"], ["$userId"], "_event_participant", [["deleted", false]], 1),
+
+                    new("$addFields", new BsonDocument
+                    {
+                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"nameEvent", MongoUtil.First("_event.title")},
+                        {"startDate", MongoUtil.First("_event.startDate")},
+                        {"endDate", MongoUtil.First("_event.endDate")},
+                        {"name", MongoUtil.First("_user.name")},
+                    }),
+
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", 1},
+                        {"startDate", 1},
+                        {"endDate", 1},
+                        {"hours", 1},
+                        {"nameEvent", 1},
+                        {"name", 1},
+                        {"keyCertificate", 1}
                     }),
                 ];
 

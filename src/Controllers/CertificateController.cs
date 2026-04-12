@@ -1,6 +1,6 @@
+using api_camem.src.Interfaces;
 using api_camem.src.Models;
 using api_camem.src.Models.Base;
-using api_camem.src.Services;
 using api_camem.src.Shared.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +9,7 @@ namespace api_camem.src.Controllers
 {
     [Route("api/certificates")]
     [ApiController]
-    public class CertificateController(CertificateService service) : ControllerBase
+    public class CertificateController(ICertificateService service) : ControllerBase
     {
         [Authorize]
         [HttpGet]
@@ -24,6 +24,13 @@ namespace api_camem.src.Controllers
         public async Task<IActionResult> GetByIdAsync(string id)
         {
             ResponseApi<dynamic?> response = await service.GetByIdAggregateAsync(id);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [HttpGet("validate/{keyCertificate}")]
+        public async Task<IActionResult> GetValidateKeyAsync(string keyCertificate)
+        {
+            ResponseApi<dynamic?> response = await service.GetValidateKeyAsync(keyCertificate);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 

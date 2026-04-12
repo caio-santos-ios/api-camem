@@ -8,6 +8,7 @@ namespace api_camem.src.Interfaces
     {
         Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllDTO request);
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
+        Task<ResponseApi<dynamic?>> GetValidateKeyAsync(string keyCertificate);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
         Task<ResponseApi<Certificate?>> CreateAsync(CreateCertificateDTO request);
         Task<ResponseApi<Certificate?>> UpdateAsync(UpdateCertificateDTO request);

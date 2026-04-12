@@ -39,6 +39,19 @@ namespace api_camem.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
         }
+        public async Task<ResponseApi<dynamic?>> GetValidateKeyAsync(string keyCertificate)
+        {
+            try
+            {
+                ResponseApi<dynamic?> certificate = await repository.GetValidateKeyAsync(keyCertificate);
+                if(certificate.Data is null) return new(null, 404, "Certificado não encontrada");
+                return new(certificate.Data, 200, "Certificado obtido com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
         public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request)
         {
             try
