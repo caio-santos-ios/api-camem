@@ -18,9 +18,14 @@ namespace api_camem.src.Services
         MailTemplate mailTemplate,
         INotificationService notificationService,
         ICertificateService certificateService,
+        IEventParticipantFunctionRepository eventParticipantFunctionRepository,
+        ICustomCertificateRepository customCertificateRepository,
+        UploadHandler uploadHandler,
         IMapper _mapper
     ) : IEventService
     {
+        private static readonly string UiURI =  Environment.GetEnvironmentVariable("UI_URI") ?? "";
+
         #region READ
         public async Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllDTO request)
         {
@@ -97,6 +102,8 @@ namespace api_camem.src.Services
                 Event evenT = _mapper.Map<Event>(request);
                 evenT.UpdatedAt = DateTime.UtcNow;
                 evenT.CreatedAt = eventResponse.Data.CreatedAt;
+                evenT.Photo = eventResponse.Data.Photo;
+                evenT.Status = eventResponse.Data.Status;
 
                 ResponseApi<Event?> response = await repository.UpdateAsync(evenT);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
@@ -125,6 +132,7 @@ namespace api_camem.src.Services
                 ResponseApi<Event?> response = await repository.UpdateAsync(eventResponse.Data);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
                 
+                List<string> userIds = [];
                 foreach (EventParticipant eventParticipant in eventParticipants.Data)
                 {
                     if(!string.IsNullOrEmpty(eventParticipant.UserId))
@@ -132,30 +140,38 @@ namespace api_camem.src.Services
                         ResponseApi<User?> user = await userRepository.GetByIdAsync(eventParticipant.UserId);
                         if(user.Data is not null)
                         {
-                            List<string> functions = eventParticipant.Functions.Select(x => x.Name).ToList();
-                            decimal hours = eventParticipant.Functions.Sum(x => x.Hours);
-                            string functionName = "";
-                            if(functions.Count > 1)
-                            {
-                                functionName = $"{functions.Count} funções";
-                            }
-                            else
-                            {
-                                functionName = functions.Count == 0 ? "Sem função" : functions[0];
-                            }
+                            if(user.Data.SettingNotification.NewEventPush) userIds.Add(user.Data.Id);
+                            if(!user.Data.SettingNotification.NewEventMail) continue;
 
-                            string endDate = "";
-                            if(eventResponse.Data.EndDate is not null)
-                            {
-                                endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
-                            }
+                            ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
 
-                            await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                            if(listFunction.Data is not null)
+                            {
+                                List<string> functions = listFunction.Data.Select(x => x.Name).ToList();
+                                decimal hours = listFunction.Data.Sum(x => x.Hours);
+                                string functionName = "";
+                                if(functions.Count > 1)
+                                {
+                                    functionName = $"{functions.Count} funções";
+                                }
+                                else
+                                {
+                                    functionName = functions.Count == 0 ? "Sem função" : functions[0];
+                                }
+
+                                string endDate = "";
+                                if(eventResponse.Data.EndDate is not null)
+                                {
+                                    endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
+                                }
+
+                                await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                            }
                         }
                     }
                 }
 
-                List<string> userIds = eventParticipants.Data.Select(u => u.UserId).ToList();
+                // List<string> userIds = eventParticipants.Data.Select(u => u.UserId).ToList();
                 if (userIds.Count > 0)
                 {
                     await notificationService.SendToManyAsync(userIds, new()
@@ -181,7 +197,9 @@ namespace api_camem.src.Services
             {
                 ResponseApi<Event?> eventResponse = await repository.GetByIdAsync(request.Id);
                 if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
-                
+
+                ResponseApi<dynamic?> customCertificate = await customCertificateRepository.GetByIdAggregateAsync("");
+
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
                 eventResponse.Data.Status = "Finalizado";
 
@@ -200,38 +218,62 @@ namespace api_camem.src.Services
                             ResponseApi<User?> user = await userRepository.GetByIdAsync(eventParticipant.UserId);
                             if(user.Data is not null)
                             {
-                                if(eventParticipant.Functions.Where(x => x.IsPresence).Any())
+                                if(user.Data.SettingNotification.NewCertificatePush) userIds.Add(user.Data.Id);
+                                if(!user.Data.SettingNotification.NewCertificateMail) continue;
+                                
+                                ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
+                                if(listFunction.Data is not null)
                                 {
-                                    userIds.Add(user.Data.Id);
-                                    List<string> functions = eventParticipant.Functions.Where(x => x.IsPresence).Select(x => x.Name).ToList();
-                                    decimal hours = eventParticipant.Functions.Where(x => x.IsPresence).Sum(x => x.Hours);
-                                    string functionName = "";
-                                    if(functions.Count > 1)
+                                    if(listFunction.Data.Where(x => x.IsPresence).Any())
                                     {
-                                        functionName = $"{functions.Count} funções";
-                                    }
-                                    else
-                                    {
-                                        functionName = functions.Count == 0 ? "Sem função" : functions[0];
-                                    }
 
-                                    string endDate = "";
-                                    if(eventResponse.Data.EndDate is not null)
-                                    {
-                                        endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
-                                    }
+                                        List<string> functions = listFunction.Data.Where(x => x.IsPresence).Select(x => x.Name).ToList();
+                                        decimal hours = listFunction.Data.Where(x => x.IsPresence).Sum(x => x.Hours);
+                                        string functionName = "";
+                                        if(functions.Count > 1)
+                                        {
+                                            functionName = $"{functions.Count} funções";
+                                        }
+                                        else
+                                        {
+                                            functionName = functions.Count == 0 ? "Sem função" : functions[0];
+                                        }
 
-                                    await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
-                                    var res = await certificateService.CreateAsync(new ()
-                                    {
-                                        Name = eventResponse.Data.Title,
-                                        EventId = eventResponse.Data.Id,
-                                        UserId = eventParticipant.UserId,
-                                        Functions = functions,
-                                        Hours = hours,
-                                        KeyCertificate = eventResponse.Data.KeyCertificate,
-                                        CreatedBy = request.CreatedBy
-                                    });
+                                        string endDate = "";
+                                        if(eventResponse.Data.EndDate is not null)
+                                        {
+                                            endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
+                                        }
+
+                                        await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                                        
+                                        string html = customCertificate.Data is null ? "" : customCertificate.Data.html;
+                                        string dates = eventResponse.Data.StartDate.ToString("dd/MM/yyyy");
+
+                                        if(eventResponse.Data.EndDate is not null) dates += " até " + eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
+
+                                        if(customCertificate.Data is not null)
+                                        {
+                                            html = html.Replace("{{name_participant}}", user.Data.Name)
+                                            .Replace("{{function}}", functionName)
+                                            .Replace("{{name_event}}", eventResponse.Data.Title)
+                                            .Replace("{{dates}}", dates)
+                                            .Replace("{{hours}}", hours.ToString())
+                                            .Replace("{{ui_uri}}", UiURI);
+                                        }
+                                        
+                                        var res = await certificateService.CreateAsync(new ()
+                                        {
+                                            Name = eventResponse.Data.Title,
+                                            EventId = eventResponse.Data.Id,
+                                            UserId = eventParticipant.UserId,
+                                            Functions = functions,
+                                            Hours = hours,
+                                            KeyCertificate = eventResponse.Data.KeyCertificate,
+                                            CreatedBy = request.CreatedBy,
+                                            Html = html
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -251,6 +293,47 @@ namespace api_camem.src.Services
                 }
 
                 return new(response.Data, 200, "Evento finalizado com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<Event?>> SavePhotoAsync(SaveEventPhotoDTO request)
+        {
+            try
+            {
+                if (request.Photo == null || request.Photo.Length == 0) return new(null, 400, "Falha ao salvar foto de capa");
+
+                ResponseApi<Event?> evenT = await repository.GetByIdAsync(request.Id);
+                if(evenT.Data is null) return new(null, 404, "Falha ao salvar foto de capa");
+
+                string uriPhoto = await uploadHandler.UploadAttachment("events", request.Photo, "/api/events/photo");
+                evenT.Data.UpdatedAt = DateTime.UtcNow;
+                evenT.Data.Photo = uriPhoto;
+
+                ResponseApi<Event?> response = await repository.UpdateAsync(evenT.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao salvar foto de capa");
+                return new(evenT.Data, 200, "Foto de capa salva com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<Event?>> RemovePhotoAsync(RemoveEventPhotoDTO request)
+        {
+            try
+            {
+                ResponseApi<Event?> evenT = await repository.GetByIdAsync(request.Id);
+                if(evenT.Data is null) return new(null, 404, "Falha ao remover foto de capa");
+
+                evenT.Data.UpdatedAt = DateTime.UtcNow;
+                evenT.Data.Photo = "";
+
+                ResponseApi<Event?> response = await repository.UpdateAsync(evenT.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao remover foto de capa");
+                return new(evenT.Data, 200, "Foto de capa salva com sucesso");
             }
             catch(Exception ex)
             {

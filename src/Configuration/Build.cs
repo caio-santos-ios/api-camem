@@ -39,10 +39,14 @@ namespace api_camem.src.Configuration
             builder.Services.AddTransient<IEventRepository, EventRepository>();
             builder.Services.AddTransient<IEventParticipantService, EventParticipantService>();
             builder.Services.AddTransient<IEventParticipantRepository, EventParticipantRepository>();
+            builder.Services.AddTransient<IEventParticipantFunctionService, EventParticipantFunctionService>();
+            builder.Services.AddTransient<IEventParticipantFunctionRepository, EventParticipantFunctionRepository>();
             
             // CERTIFICATE
             builder.Services.AddTransient<ICertificateService, CertificateService>();
             builder.Services.AddTransient<ICertificateRepository, CertificateRepository>();
+            builder.Services.AddTransient<ICustomCertificateService, CustomCertificateService>();
+            builder.Services.AddTransient<ICustomCertificateRepository, CustomCertificateRepository>();
 
             // SETTINGS
             builder.Services.AddScoped<ILoggerService, LoggerService>();

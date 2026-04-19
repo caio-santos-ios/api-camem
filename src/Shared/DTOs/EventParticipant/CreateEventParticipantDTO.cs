@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using api_camem.src.Models;
 
 namespace api_camem.src.Shared.DTOs
 {
@@ -11,8 +10,11 @@ namespace api_camem.src.Shared.DTOs
         
         public string EventId {get;set;} = string.Empty;        
         
-        public string UserId {get;set;} = string.Empty;        
-        
-        public List<EventParticipantFunction> Functions {get;set;} = []; 
+        public string UserId {get;set;} = string.Empty;
+
+        [Required(ErrorMessage = "A Função é obrigatória.")]
+        [Display(Order = 1)]
+        public string FunctionId {get;set;} = string.Empty;
+        public decimal Hours {get;set;} = 0;           
     }
 }

@@ -11,11 +11,12 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<dynamic?>> GetByIdAggregateAsync(string id);
         Task<ResponseApi<dynamic?>> GetLoggedAsync(string id);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
-        Task<ResponseApi<User?>> CreateAsync(CreateUserDTO user);
-        Task<ResponseApi<User?>> UpdateAsync(UpdateUserDTO user);
-        Task<ResponseApi<User?>> UpdateStatusAccessAsync(UpdateUserStatusAccessDTO user);
-        Task<ResponseApi<User?>> SavePhotoProfileAsync(SaveUserPhotoDTO user);
-        Task<ResponseApi<User?>> ResendCodeAccessAsync(UpdateUserDTO user);
+        Task<ResponseApi<User?>> CreateAsync(CreateUserDTO request);
+        Task<ResponseApi<User?>> UpdateAsync(UpdateUserDTO request);
+        Task<ResponseApi<User?>> UpdateStatusAccessAsync(UpdateUserStatusAccessDTO request);
+        Task<ResponseApi<User?>> UpdateSettingNotificationAsync(UpdateUserSettingNotificationDTO request);
+        Task<ResponseApi<User?>> SavePhotoProfileAsync(SaveUserPhotoDTO request);
+        Task<ResponseApi<User?>> ResendCodeAccessAsync(UpdateUserDTO request);
         Task<ResponseApi<User?>> RemovePhotoProfileAsync(string id);
         Task<ResponseApi<User?>> ValidatedAccessAsync(string codeAccess);
         Task<ResponseApi<User>> DeleteAsync(DeleteDTO request);

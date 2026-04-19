@@ -17,23 +17,12 @@ namespace api_camem.src.Models
         public string EventId {get;set;} = string.Empty;        
         
         [BsonElement("userId")]
-        public string UserId {get;set;} = string.Empty;        
+        public string UserId {get;set;} = string.Empty; 
         
-        [BsonElement("functions")]
-        public List<EventParticipantFunction> Functions {get;set;} = [];        
-    }
-    public class EventParticipantFunction : ModelBase
-    {
-        [BsonElement("name")]
-        public string Name {get;set;} = string.Empty;        
-        
-        [BsonElement("hours")]
-        public decimal Hours {get;set;} = 0;       
-        
-        [BsonElement("isPresence")]
-        public bool IsPresence {get;set;} = true;   
+        [BsonElement("functionId")]
+        public string FunctionId {get;set;} = string.Empty; 
 
-        [BsonElement("notesPresence")]
-        public string NotesPresence {get;set;} = string.Empty;       
+        [BsonElement("hours")]
+        public decimal Hours {get;set;} = 0;
     }
 }

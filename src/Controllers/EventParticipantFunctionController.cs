@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace api_camem.src.Controllers
 {
-    [Route("api/event-participants")]
+    [Route("api/event-participant-functions")]
     [ApiController]
-    public class EventParticipantController(IEventParticipantService service) : ControllerBase
+    public class EventParticipantFunctionController(IEventParticipantFunctionService service) : ControllerBase
     {
         [Authorize]
         [HttpGet]
@@ -38,31 +38,21 @@ namespace api_camem.src.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateEventParticipantDTO body)
+        public async Task<IActionResult> Create([FromBody] CreateEventParticipantFunctionDTO body)
         {
             if (body == null) return BadRequest("Dados inválidos.");
 
-            ResponseApi<EventParticipant?> response = await service.CreateAsync(body);
+            ResponseApi<EventParticipantFunction?> response = await service.CreateAsync(body);
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
         [Authorize]
         [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UpdateEventParticipantDTO body)
+        public async Task<IActionResult> Update([FromBody] UpdateEventParticipantFunctionDTO body)
         {
             if (body == null) return BadRequest("Dados inválidos.");
 
-            ResponseApi<EventParticipant?> response = await service.UpdateAsync(body);
-            return StatusCode(response.StatusCode, new { response.Result });
-        }
-        
-        [Authorize]
-        [HttpPut("presence")]
-        public async Task<IActionResult> UpdatePresence([FromBody] UpdatePresenceEventParticipantDTO body)
-        {
-            if (body == null) return BadRequest("Dados inválidos.");
-
-            ResponseApi<EventParticipant?> response = await service.UpdatePresenceAsync(body);
+            ResponseApi<EventParticipantFunction?> response = await service.UpdateAsync(body);
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
@@ -71,7 +61,7 @@ namespace api_camem.src.Controllers
         public async Task<IActionResult> Delete(string id)
         {
             string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            ResponseApi<EventParticipant> response = await service.DeleteAsync(new () { Id = id, DeletedBy = userId! });
+            ResponseApi<EventParticipantFunction> response = await service.DeleteAsync(new () { Id = id, DeletedBy = userId! });
             return StatusCode(response.StatusCode, new { response.Result });
         }
     }

@@ -11,6 +11,7 @@ namespace api_camem.src.Services
     (
         IEventParticipantRepository repository,
         IEventRepository eventRepository,
+        IEventParticipantFunctionRepository eventParticipantFunctionRepository,
         IMapper _mapper
     ) : IEventParticipantService
     {
@@ -63,9 +64,6 @@ namespace api_camem.src.Services
         {
             try
             {
-                ResponseApi<EventParticipant?> eventParticipantExisted = await repository.GetByUserIdAsync(request.UserId, request.EventId, "");
-                if(eventParticipantExisted.Data is not null) return new(null, 400, "Participante já está cadastrado neste evento.");
-
                 EventParticipant eventParticipant = _mapper.Map<EventParticipant>(request);
 
                 ResponseApi<EventParticipant?> response = await repository.CreateAsync(eventParticipant);
@@ -77,6 +75,14 @@ namespace api_camem.src.Services
                 {
                     evenT.Data.UserIds.Add(request.UserId);
                     await eventRepository.UpdateAsync(evenT.Data);
+                }
+
+                ResponseApi<EventParticipantFunction?> function = await eventParticipantFunctionRepository.GetByIdAsync(request.FunctionId);
+                if(function.Data is not null)
+                {
+                    function.Data.EventParticipantId = response.Data.Id;
+
+                    await eventParticipantFunctionRepository.UpdateAsync(function.Data);
                 }
 
                 return new(response.Data, 201, "Participante criado com sucesso.");
@@ -96,9 +102,6 @@ namespace api_camem.src.Services
             {
                 ResponseApi<EventParticipant?> eventResponse = await repository.GetByIdAsync(request.Id);
                 if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
-
-                ResponseApi<EventParticipant?> eventParticipantExisted = await repository.GetByUserIdAsync(request.UserId, request.EventId, request.Id);
-                if(eventParticipantExisted.Data is not null) return new(null, 400, "Participante já está cadastrado neste evento.");
                 
                 EventParticipant eventParticipant = _mapper.Map<EventParticipant>(request);
                 eventParticipant.UpdatedAt = DateTime.UtcNow;
@@ -114,6 +117,26 @@ namespace api_camem.src.Services
                     await eventRepository.UpdateAsync(evenT.Data);
                 }
 
+                if(request.FunctionId != eventResponse.Data.FunctionId)
+                {
+                    ResponseApi<EventParticipantFunction?> function = await eventParticipantFunctionRepository.GetByIdAsync(request.FunctionId);
+                    ResponseApi<EventParticipantFunction?> functionLast = await eventParticipantFunctionRepository.GetByIdAsync(eventResponse.Data.FunctionId);
+                    
+                    if(function.Data is not null)
+                    {
+                        function.Data.EventParticipantId = eventResponse.Data.Id;
+
+                        await eventParticipantFunctionRepository.UpdateAsync(function.Data);
+                    }
+                    
+                    if(functionLast.Data is not null)
+                    {
+                        functionLast.Data.EventParticipantId = "";
+
+                        await eventParticipantFunctionRepository.UpdateAsync(functionLast.Data);
+                    }
+                }
+
                 return new(response.Data, 200, "Atualizado com sucesso");
             }
             catch(Exception ex)
@@ -121,7 +144,7 @@ namespace api_camem.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
         }
-        public async Task<ResponseApi<EventParticipant?>> UpdatePresenceAsync(UpdateEventParticipantDTO request)
+        public async Task<ResponseApi<EventParticipant?>> UpdatePresenceAsync(UpdatePresenceEventParticipantDTO request)
         {
             try
             {
@@ -129,7 +152,16 @@ namespace api_camem.src.Services
                 if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
 
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
-                eventResponse.Data.Functions = request.Functions;
+
+                ResponseApi<EventParticipantFunction?> function = await eventParticipantFunctionRepository.GetByIdAsync(request.FunctionId);
+
+                if(function.Data is not null)
+                {
+                    function.Data.IsPresence = request.IsPresence;
+                    function.Data.NotesPresence = request.NotesPresence;
+
+                    await eventParticipantFunctionRepository.UpdateAsync(function.Data);
+                }
 
                 ResponseApi<EventParticipant?> response = await repository.UpdateAsync(eventResponse.Data);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");

@@ -27,5 +27,8 @@ namespace api_camem.src.Models
         
         [BsonElement("keyCertificate")]
         public string KeyCertificate {get;set;} = string.Empty;    
+        
+        [BsonElement("html")]
+        public string Html {get;set;} = string.Empty;    
     }
 }

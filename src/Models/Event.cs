@@ -30,5 +30,11 @@ namespace api_camem.src.Models
 
         [BsonElement("keyCertificate")]
         public string KeyCertificate {get;set;} = string.Empty;       
+
+        [BsonElement("photo")]
+        public string Photo {get;set;} = string.Empty;       
+
+        [BsonElement("registerBookNumber")]
+        public string RegisterBookNumber {get;set;} = string.Empty;       
     }
 }

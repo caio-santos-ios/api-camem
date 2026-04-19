@@ -10,10 +10,10 @@ using MongoDB.Driver;
 
 namespace api_camem.src.Repository
 {
-    public class CertificateRepository(AppDbContext context) : ICertificateRepository
+    public class CustomCertificateRepository(AppDbContext context) : ICustomCertificateRepository
     {
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Certificate> pagination)
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<CustomCertificate> pagination)
         {
             try
             {
@@ -46,14 +46,13 @@ namespace api_camem.src.Repository
                         {"hours", 1},
                         {"nameEvent", 1},
                         {"name", 1},
-                        {"keyCertificate", 1},
+                        {"keyCustomCertificate", 1},
                         {"functions", 1},
-                        {"html", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
 
-                List<BsonDocument> results = await context.Certificates.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.CustomCertificates.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -69,7 +68,7 @@ namespace api_camem.src.Repository
             {
                 BsonDocument[] pipeline = [
                     new("$match", new BsonDocument{
-                        {"_id", new ObjectId(id)},
+                        // {"_id", new ObjectId(id)},
                         {"deleted", false}
                     }),
                     new("$addFields", new BsonDocument {
@@ -81,7 +80,7 @@ namespace api_camem.src.Repository
                     }),
                 ];
 
-                BsonDocument? response = await context.Certificates.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                BsonDocument? response = await context.CustomCertificates.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
                 dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
                 return result is null ? new(null, 404, "Certificado não encontrado") : new(result);
             }
@@ -90,13 +89,13 @@ namespace api_camem.src.Repository
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
-        public async Task<ResponseApi<dynamic?>> GetValidateKeyAsync(string keyCertificate)
+        public async Task<ResponseApi<dynamic?>> GetValidateKeyAsync(string keyCustomCertificate)
         {
             try
             {
                 BsonDocument[] pipeline = [
                     new("$match", new BsonDocument{
-                        {"keyCertificate", keyCertificate},
+                        {"keyCustomCertificate", keyCustomCertificate},
                         {"deleted", false}
                     }),
                     
@@ -122,11 +121,11 @@ namespace api_camem.src.Repository
                         {"hours", 1},
                         {"nameEvent", 1},
                         {"name", 1},
-                        {"keyCertificate", 1}
+                        {"keyCustomCertificate", 1}
                     }),
                 ];
 
-                BsonDocument? response = await context.Certificates.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                BsonDocument? response = await context.CustomCertificates.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
                 dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
                 return result is null ? new(null, 404, "Certificado não encontrado") : new(result);
             }
@@ -136,11 +135,11 @@ namespace api_camem.src.Repository
             }
         }
         
-        public async Task<ResponseApi<Certificate?>> GetByIdAsync(string id)
+        public async Task<ResponseApi<CustomCertificate?>> GetByIdAsync(string id)
         {
             try
             {
-                Certificate? paymentMethod = await context.Certificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                CustomCertificate? paymentMethod = await context.CustomCertificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
                 return new(paymentMethod);
             }
             catch
@@ -149,7 +148,7 @@ namespace api_camem.src.Repository
             }
         }
         
-        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Certificate> pagination)
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<CustomCertificate> pagination)
         {
             try
             {
@@ -171,7 +170,7 @@ namespace api_camem.src.Repository
                     new("$sort", pagination.PipelineSort),
                 };
 
-                List<BsonDocument> results = await context.Certificates.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.CustomCertificates.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -181,7 +180,7 @@ namespace api_camem.src.Repository
             }
         }
 
-        public async Task<int> GetCountDocumentsAsync(PaginationUtil<Certificate> pagination)
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<CustomCertificate> pagination)
         {
             List<BsonDocument> pipeline = new()
             {
@@ -198,17 +197,17 @@ namespace api_camem.src.Repository
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.Certificates.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<BsonDocument> results = await context.CustomCertificates.Aggregate<BsonDocument>(pipeline).ToListAsync();
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         #endregion
         
         #region CREATE
-        public async Task<ResponseApi<Certificate?>> CreateAsync(Certificate paymentMethod)
+        public async Task<ResponseApi<CustomCertificate?>> CreateAsync(CustomCertificate paymentMethod)
         {
             try
             {
-                await context.Certificates.InsertOneAsync(paymentMethod);
+                await context.CustomCertificates.InsertOneAsync(paymentMethod);
 
                 return new(paymentMethod, 201, "Certificado criada com sucesso");
             }
@@ -220,11 +219,11 @@ namespace api_camem.src.Repository
         #endregion
         
         #region UPDATE
-        public async Task<ResponseApi<Certificate?>> UpdateAsync(Certificate paymentMethod)
+        public async Task<ResponseApi<CustomCertificate?>> UpdateAsync(CustomCertificate paymentMethod)
         {
             try
             {
-                await context.Certificates.ReplaceOneAsync(x => x.Id == paymentMethod.Id, paymentMethod);
+                await context.CustomCertificates.ReplaceOneAsync(x => x.Id == paymentMethod.Id, paymentMethod);
 
                 return new(paymentMethod, 200, "Certificado atualizada com sucesso");
             }
@@ -236,16 +235,16 @@ namespace api_camem.src.Repository
         #endregion
         
         #region DELETE
-        public async Task<ResponseApi<Certificate>> DeleteAsync(string id)
+        public async Task<ResponseApi<CustomCertificate>> DeleteAsync(string id)
         {
             try
             {
-                Certificate? paymentMethod = await context.Certificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                CustomCertificate? paymentMethod = await context.CustomCertificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
                 if(paymentMethod is null) return new(null, 404, "Certificado não encontrado");
                 paymentMethod.Deleted = true;
                 paymentMethod.DeletedAt = DateTime.UtcNow;
 
-                await context.Certificates.ReplaceOneAsync(x => x.Id == id, paymentMethod);
+                await context.CustomCertificates.ReplaceOneAsync(x => x.Id == id, paymentMethod);
 
                 return new(paymentMethod, 204, "Certificado excluída com sucesso");
             }

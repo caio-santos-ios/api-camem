@@ -23,11 +23,17 @@ namespace api_camem.src.Configuration
             
             CreateMap<CreateEventParticipantDTO, EventParticipant>().ReverseMap();
             CreateMap<UpdateEventParticipantDTO, EventParticipant>().ReverseMap();
+            
+            CreateMap<CreateEventParticipantFunctionDTO, EventParticipantFunction>().ReverseMap();
+            CreateMap<UpdateEventParticipantFunctionDTO, EventParticipantFunction>().ReverseMap();
             #endregion
             
             #region CERTIFICATE
             CreateMap<CreateCertificateDTO, Certificate>().ReverseMap();
             CreateMap<UpdateCertificateDTO, Certificate>().ReverseMap();
+            
+            CreateMap<CreateCustomCertificateDTO, CustomCertificate>().ReverseMap();
+            CreateMap<UpdateCustomCertificateDTO, CustomCertificate>().ReverseMap();
             #endregion
 
             #region SETTINGS

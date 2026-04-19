@@ -9,7 +9,7 @@ using api_camem.src.Shared.Validators;
 
 namespace api_camem.src.Services
 {
-    public class UserService(IUserRepository userRepository, IProfileUserRepository profileUserRepository, MailHandler mailHandler, UploadHandler uploadHander, MailTemplate mailTemplate) : IUserService
+    public class UserService(IUserRepository userRepository, IProfileUserRepository profileUserRepository, MailHandler mailHandler, UploadHandler uploadHandler, MailTemplate mailTemplate) : IUserService
     {
         #region READ
         public async Task<PaginationApi<List<dynamic>>> GetAllAsync(GetAllDTO request)
@@ -109,7 +109,6 @@ namespace api_camem.src.Services
                     UserName = $"usuário{access.CodeAccess}",
                     Email = request.Email,
                     Name = request.Name,
-                    // Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     Password = "",
                     CodeAccess = "",
                     CodeAccessExpiration = null,
@@ -252,6 +251,26 @@ namespace api_camem.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
         }
+        public async Task<ResponseApi<User?>> UpdateSettingNotificationAsync(UpdateUserSettingNotificationDTO request)
+        {
+            try
+            {
+                ResponseApi<User?> user = await userRepository.GetByIdAsync(request.Id);
+
+                if(user.Data is null) return new(null, 400, "Falha ao salvar.");                    
+
+                user.Data.UpdatedAt = DateTime.UtcNow;
+                user.Data.SettingNotification = request.SettingNotification;
+
+                ResponseApi<User?> response = await userRepository.UpdateAsync(user.Data);
+                if(!response.IsSuccess) return new(null, 400, "Falha ao salvar.");
+                return new(response.Data, 200, "Salvo com sucesso");
+            }
+            catch(Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            }
+        }
         public async Task<ResponseApi<User?>> SavePhotoProfileAsync(SaveUserPhotoDTO request)
         {
             try
@@ -261,7 +280,7 @@ namespace api_camem.src.Services
                 ResponseApi<User?> user = await userRepository.GetByIdAsync(request.Id);
                 if(user.Data is null) return new(null, 404, "Falha ao salvar foto de perfil");
 
-                string uriPhoto = await uploadHander.UploadAttachment("users", request.Photo, "/api/users/photo-profile");
+                string uriPhoto = await uploadHandler.UploadAttachment("users", request.Photo, "/api/users/photo-profile");
                 user.Data.UpdatedAt = DateTime.UtcNow;
                 user.Data.Photo = uriPhoto;
 

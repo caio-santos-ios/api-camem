@@ -75,6 +75,22 @@ namespace api_camem.src.Controllers
             ResponseApi<Event?> response = await service.FinishAsync(body);
             return StatusCode(response.StatusCode, new { response.Result });
         }
+
+        [Authorize]
+        [HttpPut("save-photo")]
+        public async Task<IActionResult> SavePhotoAsync([FromForm] SaveEventPhotoDTO body)
+        {
+            ResponseApi<Event?> response = await service.SavePhotoAsync(body);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [Authorize]
+        [HttpPut("remove-photo")]
+        public async Task<IActionResult> RemovePhotoAsync([FromForm] RemoveEventPhotoDTO body)
+        {
+            ResponseApi<Event?> response = await service.RemovePhotoAsync(body);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
         
         [Authorize]
         [HttpDelete("{id}")]

@@ -26,12 +26,16 @@ namespace api_camem.src.Repository
                     new("$limit", pagination.Limit),
 
                     MongoUtil.Lookup("users", ["$userId"], ["$_id"], "_user", [["deleted", false]], 1),
+                    MongoUtil.Lookup("event_participant_functions", ["$functionId"], ["$_id"], "_function", [["deleted", false]], 1),
 
                     new("$addFields", new BsonDocument
                     {
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"userCpf", MongoUtil.First("_user.cpf")},
                         {"userRa", MongoUtil.First("_user.ra")},
+                        {"functionName", MongoUtil.First("_function.name")},
+                        {"isPresence", MongoUtil.First("_function.isPresence")},
+                        {"notesPresence", MongoUtil.First("_function.notesPresence")},
                     }),
 
                     new("$project", new BsonDocument
@@ -41,7 +45,11 @@ namespace api_camem.src.Repository
                         {"name", 1},
                         {"userCpf", 1},
                         {"userRa", 1},
-                        {"functions", 1},
+                        {"functionName", 1},
+                        {"isPresence", 1},
+                        {"notesPresence", 1},
+                        {"hours", 1},
+                        {"functionId", 1},
                         {"createdAt", 1},
                     }),
                     new("$sort", pagination.PipelineSort),

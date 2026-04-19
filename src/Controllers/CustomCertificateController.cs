@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using api_camem.src.Interfaces;
 using api_camem.src.Models;
 using api_camem.src.Models.Base;
@@ -8,9 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace api_camem.src.Controllers
 {
-    [Route("api/event-participants")]
+    [Route("api/custom-certificates")]
     [ApiController]
-    public class EventParticipantController(IEventParticipantService service) : ControllerBase
+    public class CustomCertificateController(ICustomCertificateService service) : ControllerBase
     {
         [Authorize]
         [HttpGet]
@@ -29,49 +28,56 @@ namespace api_camem.src.Controllers
         }
         
         [Authorize]
+        [HttpGet("last")]
+        public async Task<IActionResult> GetLastAsync()
+        {
+            ResponseApi<dynamic?> response = await service.GetLastAsync();
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [HttpGet("validate/{keyCustomCertificate}")]
+        public async Task<IActionResult> GetValidateKeyAsync(string keyCustomCertificate)
+        {
+            ResponseApi<dynamic?> response = await service.GetValidateKeyAsync(keyCustomCertificate);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
+        [Authorize]
         [HttpGet("select")]
         public async Task<IActionResult> GetSelect()
         {
             ResponseApi<List<dynamic>> response = await service.GetSelectAsync(new(Request.Query));
             return StatusCode(response.StatusCode, new { response.Result });
         }
-
+        
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateEventParticipantDTO body)
+        public async Task<IActionResult> Create([FromBody] CreateCustomCertificateDTO body)
         {
             if (body == null) return BadRequest("Dados inválidos.");
 
-            ResponseApi<EventParticipant?> response = await service.CreateAsync(body);
+            ResponseApi<CustomCertificate?> response = await service.CreateAsync(body);
+
             return StatusCode(response.StatusCode, new { response.Result });
         }
         
         [Authorize]
         [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UpdateEventParticipantDTO body)
+        public async Task<IActionResult> Update([FromBody] UpdateCustomCertificateDTO body)
         {
             if (body == null) return BadRequest("Dados inválidos.");
 
-            ResponseApi<EventParticipant?> response = await service.UpdateAsync(body);
-            return StatusCode(response.StatusCode, new { response.Result });
-        }
-        
-        [Authorize]
-        [HttpPut("presence")]
-        public async Task<IActionResult> UpdatePresence([FromBody] UpdatePresenceEventParticipantDTO body)
-        {
-            if (body == null) return BadRequest("Dados inválidos.");
+            ResponseApi<CustomCertificate?> response = await service.UpdateAsync(body);
 
-            ResponseApi<EventParticipant?> response = await service.UpdatePresenceAsync(body);
             return StatusCode(response.StatusCode, new { response.Result });
-        }
+        }        
         
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            string? userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            ResponseApi<EventParticipant> response = await service.DeleteAsync(new () { Id = id, DeletedBy = userId! });
+            ResponseApi<CustomCertificate> response = await service.DeleteAsync(id);
+
             return StatusCode(response.StatusCode, new { response.Result });
         }
     }

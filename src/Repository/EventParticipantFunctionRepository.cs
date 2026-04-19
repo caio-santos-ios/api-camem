@@ -11,10 +11,10 @@ using MongoDB.Driver;
 
 namespace api_camem.src.Repository
 {
-    public class EventRepository(AppDbContext context) : IEventRepository
+    public class EventParticipantFunctionRepository(AppDbContext context) : IEventParticipantFunctionRepository
     {
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<Event> pagination)
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(PaginationUtil<EventParticipantFunction> pagination)
         {
             try
             {
@@ -24,43 +24,28 @@ namespace api_camem.src.Repository
                     new("$sort", pagination.PipelineSort),
                     new("$skip", pagination.Skip),
                     new("$limit", pagination.Limit),
-                    
-                    MongoUtil.Lookup("event_participants", ["$_id"], ["$eventId"], "_event_participants", [["deleted", false]]),
+
+                    MongoUtil.Lookup("users", ["$userId"], ["$_id"], "_user", [["deleted", false]], 1),
 
                     new("$addFields", new BsonDocument
                     {
                         {"id", new BsonDocument("$toString", "$_id")},
+                        {"userCpf", MongoUtil.First("_user.cpf")},
+                        {"userRa", MongoUtil.First("_user.ra")},
                     }),
+
                     new("$project", new BsonDocument
                     {
                         {"_id", 0}, 
                         {"id", 1},
-                        {"title", 1},
-                        {"description", 1},
-                        {"status", 1},
-                        {"startDate", 1},
-                        {"endDate", 1},
-                        {"userIds", 1},
-                        {"photo", 1},
-                        {"participants", new BsonDocument("$map", new BsonDocument 
-                            {
-                                {"input", "$_event_participants"},
-                                {"as", "e"},
-                                {"in", new BsonDocument 
-                                    {
-                                        {"id", new BsonDocument("$toString", "$$e._id")},
-                                        {"name", "$$e.name"},
-                                        {"functions", "$$e.functions"},
-                                        {"userId", "$$e.userId"},
-                                    }
-                                }
-                            })
-                        }
+                        {"name", 1},
+                        {"hours", 1},
+                        {"createdAt", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
 
-                List<BsonDocument> results = await context.Events.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.EventParticipantFunctions.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -79,9 +64,12 @@ namespace api_camem.src.Repository
                         {"deleted", false}
                     }),
 
+                    MongoUtil.Lookup("users", ["$userId"], ["$_id"], "_user", [["deleted", false]], 1),
+
                     new("$addFields", new BsonDocument
                     {
                         {"id", new BsonDocument("$toString", "$_id")},
+                        {"userName", MongoUtil.First("_user.name")},
                     }),
 
                     new("$project", new BsonDocument
@@ -90,28 +78,52 @@ namespace api_camem.src.Repository
                     }),
                 ];
 
-                BsonDocument? response = await context.Events.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+                BsonDocument? response = await context.EventParticipantFunctions.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
                 dynamic? result = response is null ? null : BsonSerializer.Deserialize<dynamic>(response);
-                return result is null ? new(null, 404, "Event não encontrado") : new(result);
+                return result is null ? new(null, 404, "Função não encontrado") : new(result);
             }
             catch
             {
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }   
-        public async Task<ResponseApi<Event?>> GetByIdAsync(string id)
+        public async Task<ResponseApi<EventParticipantFunction?>> GetByIdAsync(string id)
         {
             try
             {
-                Event? evenT = await context.Events.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                return new(evenT);
+                EventParticipantFunction? eventParticipant = await context.EventParticipantFunctions.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                return new(eventParticipant);
             }
             catch
             {
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         } 
-        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<Event> pagination)
+        public async Task<ResponseApi<List<EventParticipantFunction>>> GetByEventParticipantIdAsync(string eventParticipantId)
+        {
+            try
+            {
+                List<EventParticipantFunction> eventParticipantFunctions = await context.EventParticipantFunctions.Find(x => x.EventParticipantId == eventParticipantId && !x.Deleted).ToListAsync();
+                return new(eventParticipantFunctions);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        } 
+        public async Task<ResponseApi<List<EventParticipantFunction>>> GetAllByEventIdAsync(string eventId)
+        {
+            try
+            {
+                List<EventParticipantFunction> eventParticipants = await context.EventParticipantFunctions.Find(x => x.EventId == eventId && !x.Deleted).ToListAsync();
+                return new(eventParticipants);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        } 
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<EventParticipantFunction> pagination)
         {
             try
             {
@@ -127,13 +139,13 @@ namespace api_camem.src.Repository
                     {
                         {"_id", 0},
                         {"id", 1}, 
-                        {"code", 1}, 
-                        {"name", 1} 
+                        {"name", 1},
+                        {"hours", 1}, 
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
 
-                List<BsonDocument> results = await context.Events.Aggregate<BsonDocument>(pipeline).ToListAsync();
+                List<BsonDocument> results = await context.EventParticipantFunctions.Aggregate<BsonDocument>(pipeline).ToListAsync();
                 List<dynamic> list = results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
                 return new(list);
             }
@@ -142,7 +154,7 @@ namespace api_camem.src.Repository
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
-        public async Task<int> GetCountDocumentsAsync(PaginationUtil<Event> pagination)
+        public async Task<int> GetCountDocumentsAsync(PaginationUtil<EventParticipantFunction> pagination)
         {
             List<BsonDocument> pipeline = new()
             {
@@ -159,19 +171,19 @@ namespace api_camem.src.Repository
                 new("$sort", pagination.PipelineSort),
             };
 
-            List<BsonDocument> results = await context.Events.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<BsonDocument> results = await context.EventParticipantFunctions.Aggregate<BsonDocument>(pipeline).ToListAsync();
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         #endregion
         
         #region CREATE
-        public async Task<ResponseApi<Event?>> CreateAsync(Event evenT)
+        public async Task<ResponseApi<EventParticipantFunction?>> CreateAsync(EventParticipantFunction eventParticipant)
         {
             try
             {
-                await context.Events.InsertOneAsync(evenT);
+                await context.EventParticipantFunctions.InsertOneAsync(eventParticipant);
 
-                return new(evenT, 201, "Evento criada com sucesso");
+                return new(eventParticipant, 201, "Função criado com sucesso");
             }
             catch
             {
@@ -181,13 +193,13 @@ namespace api_camem.src.Repository
         #endregion
         
         #region UPDATE
-        public async Task<ResponseApi<Event?>> UpdateAsync(Event evenT)
+        public async Task<ResponseApi<EventParticipantFunction?>> UpdateAsync(EventParticipantFunction eventParticipant)
         {
             try
             {
-                await context.Events.ReplaceOneAsync(x => x.Id == evenT.Id, evenT);
+                await context.EventParticipantFunctions.ReplaceOneAsync(x => x.Id == eventParticipant.Id, eventParticipant);
 
-                return new(evenT, 201, "Evento atualizada com sucesso");
+                return new(eventParticipant, 200, "Função atualizada com sucesso");
             }
             catch
             {
@@ -197,20 +209,20 @@ namespace api_camem.src.Repository
         #endregion
         
         #region DELETE
-        public async Task<ResponseApi<Event>> DeleteAsync(DeleteDTO request)
+        public async Task<ResponseApi<EventParticipantFunction>> DeleteAsync(DeleteDTO request)
         {
             try
             {
-                Event? evenT = await context.Events.Find(x => x.Id == request.Id && !x.Deleted).FirstOrDefaultAsync();
-                if(evenT is null) return new(null, 404, "Event não encontrado");
+                EventParticipantFunction? eventParticipant = await context.EventParticipantFunctions.Find(x => x.Id == request.Id && !x.Deleted).FirstOrDefaultAsync();
+                if(eventParticipant is null) return new(null, 404, "Função não encontrado");
                 
-                evenT.Deleted = true;
-                evenT.DeletedAt = DateTime.UtcNow;
-                evenT.DeletedBy = request.DeletedBy;
+                eventParticipant.Deleted = true;
+                eventParticipant.DeletedAt = DateTime.UtcNow;
+                eventParticipant.DeletedBy = request.DeletedBy;
 
-                await context.Events.ReplaceOneAsync(x => x.Id == request.Id, evenT);
+                await context.EventParticipantFunctions.ReplaceOneAsync(x => x.Id == request.Id, eventParticipant);
 
-                return new(evenT, 204, "Evento excluída com sucesso");
+                return new(eventParticipant, 204, "Função excluída com sucesso");
             }
             catch
             {

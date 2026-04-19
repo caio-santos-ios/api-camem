@@ -40,10 +40,12 @@ namespace api_camem.src.Configuration
         #region EVENTS
         public IMongoCollection<Event> Events => Database.GetCollection<Event>("events");
         public IMongoCollection<EventParticipant> EventParticipants => Database.GetCollection<EventParticipant>("event_participants");
+        public IMongoCollection<EventParticipantFunction> EventParticipantFunctions => Database.GetCollection<EventParticipantFunction>("event_participant_functions");
         #endregion
 
         #region CERTIFICATE
         public IMongoCollection<Certificate> Certificates => Database.GetCollection<Certificate>("certificates");
+        public IMongoCollection<CustomCertificate> CustomCertificates => Database.GetCollection<CustomCertificate>("custom_certificates");
         #endregion
 
         #region SETTINGS

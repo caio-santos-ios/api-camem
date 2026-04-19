@@ -65,6 +65,9 @@ namespace api_camem.src.Models
         
         [BsonElement("statusAccess")]
         public string StatusAccess {get;set;} = string.Empty;
+        
+        [BsonElement("settingNotification")]
+        public SettingNotification SettingNotification {get;set;} = new();
     }
 
     public class Module 
@@ -105,5 +108,26 @@ namespace api_camem.src.Models
         
         [BsonElement("delete")]
         public bool Delete {get;set;} = false;
+    }
+
+    public class SettingNotification 
+    {
+        [BsonElement("newEventPush")]
+        public bool NewEventPush {get;set;} = true;
+        
+        [BsonElement("newEventMail")]
+        public bool NewEventMail {get;set;} = true;
+        
+        [BsonElement("newCertificatePush")]
+        public bool NewCertificatePush {get;set;} = true;
+        
+        [BsonElement("newCertificateMail")]
+        public bool NewCertificateMail {get;set;} = true;
+        
+        [BsonElement("newUserPush")]
+        public bool NewUserPush {get;set;} = true;
+        
+        [BsonElement("newUserMail")]
+        public bool NewUserMail {get;set;} = true;
     }
 }

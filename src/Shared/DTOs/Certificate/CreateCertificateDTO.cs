@@ -8,5 +8,6 @@ namespace api_camem.src.Shared.DTOs
         public List<string> Functions { get; set; } = [];
         public decimal Hours { get; set; } = 0;
         public string KeyCertificate {get;set;} = string.Empty; 
+        public string Html {get;set;} = string.Empty; 
     }
 }

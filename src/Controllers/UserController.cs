@@ -91,6 +91,15 @@ namespace api_camem.src.Controllers
             ResponseApi<User?> response = await service.ValidatedAccessAsync(user.CodeAccess);
             return response.IsSuccess ? Ok(new{response.Message}) : BadRequest(new{response.Message});
         }
+        
+        [HttpPut("setting-notifications")]
+        public async Task<IActionResult> UpdateSettingNotificationAsync([FromBody] UpdateUserSettingNotificationDTO body)
+        {
+            if (body == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<User?> response = await service.UpdateSettingNotificationAsync(body);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
 
         [Authorize]
         [HttpPut("profile-photo")]
