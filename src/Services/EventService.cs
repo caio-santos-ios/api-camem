@@ -24,7 +24,7 @@ namespace api_camem.src.Services
         IMapper _mapper
     ) : IEventService
     {
-        private static readonly string UiURI =  Environment.GetEnvironmentVariable("UI_URI") ?? "";
+        private static readonly string UiURI = Environment.GetEnvironmentVariable("UI_URI") ?? "";
 
         #region READ
         public async Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllDTO request)
@@ -37,7 +37,7 @@ namespace api_camem.src.Services
                 PaginationApi<List<dynamic>> data = new(events.Data, count, pagination.PageNumber, pagination.PageSize);
                 return new(data, 200, "Evento listados com sucesso");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
@@ -47,10 +47,10 @@ namespace api_camem.src.Services
             try
             {
                 ResponseApi<dynamic?> Event = await repository.GetByIdAggregateAsync(id);
-                if(Event.Data is null) return new(null, 404, "Evento não encontrada");
+                if (Event.Data is null) return new(null, 404, "Evento não encontrada");
                 return new(Event.Data);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
@@ -63,13 +63,13 @@ namespace api_camem.src.Services
                 ResponseApi<List<dynamic>> evenT = await repository.GetSelectAsync(pagination);
                 return new(evenT.Data);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
-        } 
+        }
         #endregion
-        
+
         #region CREATE
         public async Task<ResponseApi<Event?>> CreateAsync(CreateEventDTO request)
         {
@@ -80,25 +80,25 @@ namespace api_camem.src.Services
 
                 ResponseApi<Event?> response = await repository.CreateAsync(evenT);
 
-                if(response.Data is null) return new(null, 400, "Falha ao criar Event.");
+                if (response.Data is null) return new(null, 400, "Falha ao criar Event.");
                 return new(response.Data, 201, "Evento criada com sucesso.");
             }
             catch
-            { 
+            {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
             }
         }
 
         #endregion
-        
+
         #region UPDATE
         public async Task<ResponseApi<Event?>> UpdateAsync(UpdateEventDTO request)
         {
             try
             {
                 ResponseApi<Event?> eventResponse = await repository.GetByIdAsync(request.Id);
-                if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
-                
+                if (eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+
                 Event evenT = _mapper.Map<Event>(request);
                 evenT.UpdatedAt = DateTime.UtcNow;
                 evenT.CreatedAt = eventResponse.Data.CreatedAt;
@@ -106,10 +106,10 @@ namespace api_camem.src.Services
                 evenT.Status = eventResponse.Data.Status;
 
                 ResponseApi<Event?> response = await repository.UpdateAsync(evenT);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+                if (!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
                 return new(response.Data, 200, "Atualizado com sucesso");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
@@ -119,38 +119,38 @@ namespace api_camem.src.Services
             try
             {
                 ResponseApi<Event?> eventResponse = await repository.GetByIdAsync(request.Id);
-                if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
-                
+                if (eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
                 eventResponse.Data.Status = "Publicado";
                 eventResponse.Data.KeyCertificate = Guid.NewGuid().ToString("N");
 
                 ResponseApi<List<EventParticipant>> eventParticipants = await eventParticipantRepository.GetAllByEventIdAsync(request.Id);
-                if(eventParticipants.Data is null) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
-                if(eventParticipants.Data.Count == 0) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
+                if (eventParticipants.Data is null) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
+                if (eventParticipants.Data.Count == 0) return new(null, 400, "O evento precisa ter pelo menos 1 participante");
 
                 ResponseApi<Event?> response = await repository.UpdateAsync(eventResponse.Data);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
-                
+                if (!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+
                 List<string> userIds = [];
                 foreach (EventParticipant eventParticipant in eventParticipants.Data)
                 {
-                    if(!string.IsNullOrEmpty(eventParticipant.UserId))
+                    if (!string.IsNullOrEmpty(eventParticipant.UserId))
                     {
                         ResponseApi<User?> user = await userRepository.GetByIdAsync(eventParticipant.UserId);
-                        if(user.Data is not null)
+                        if (user.Data is not null)
                         {
-                            if(user.Data.SettingNotification.NewEventPush) userIds.Add(user.Data.Id);
-                            if(!user.Data.SettingNotification.NewEventMail) continue;
+                            if (user.Data.SettingNotification.NewEventPush) userIds.Add(user.Data.Id);
+                            if (!user.Data.SettingNotification.NewEventMail) continue;
 
                             ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
 
-                            if(listFunction.Data is not null)
+                            if (listFunction.Data is not null)
                             {
                                 List<string> functions = listFunction.Data.Select(x => x.Name).ToList();
                                 decimal hours = listFunction.Data.Sum(x => x.Hours);
                                 string functionName = "";
-                                if(functions.Count > 1)
+                                if (functions.Count > 1)
                                 {
                                     functionName = $"{functions.Count} funções";
                                 }
@@ -160,7 +160,7 @@ namespace api_camem.src.Services
                                 }
 
                                 string endDate = "";
-                                if(eventResponse.Data.EndDate is not null)
+                                if (eventResponse.Data.EndDate is not null)
                                 {
                                     endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
                                 }
@@ -176,17 +176,17 @@ namespace api_camem.src.Services
                 {
                     await notificationService.SendToManyAsync(userIds, new()
                     {
-                        Link      = $"/events",
-                        Title     = "Novo evento",
-                        Message   = $"Você foi adicionado em um novo evento.",
-                        Type      = "Notificacao",
+                        Link = $"/events",
+                        Title = "Novo evento",
+                        Message = $"Você foi adicionado em um novo evento.",
+                        Type = "Notificacao",
                         CreatedBy = request.CreatedBy
                     });
                 }
 
                 return new(response.Data, 200, "Evento Finalizado com sucesso");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
@@ -196,42 +196,44 @@ namespace api_camem.src.Services
             try
             {
                 ResponseApi<Event?> eventResponse = await repository.GetByIdAsync(request.Id);
-                if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
+                if (eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
 
-                ResponseApi<dynamic?> customCertificate = await customCertificateRepository.GetByIdAggregateAsync("");
+                ResponseApi<CustomCertificate?> customCertificate = await customCertificateRepository.GetByIdAsync(request.CertificateId);
 
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
                 eventResponse.Data.Status = "Finalizado";
                 eventResponse.Data.RegisterBookNumber = request.RegisterBookNumber;
+                eventResponse.Data.RegisterFolderNumber = request.RegisterFolderNumber;
+                eventResponse.Data.CertificateId = request.CertificateId;
 
                 ResponseApi<List<EventParticipant>> eventParticipants = await eventParticipantRepository.GetAllByEventIdAsync(request.Id);
 
                 ResponseApi<Event?> response = await repository.UpdateAsync(eventResponse.Data);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
-                
+                if (!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
+
                 List<string> userIds = [];
-                if(eventParticipants.Data is not null)
+                if (eventParticipants.Data is not null)
                 {
                     foreach (EventParticipant eventParticipant in eventParticipants.Data)
                     {
-                        if(!string.IsNullOrEmpty(eventParticipant.UserId))
+                        if (!string.IsNullOrEmpty(eventParticipant.UserId))
                         {
                             ResponseApi<User?> user = await userRepository.GetByIdAsync(eventParticipant.UserId);
-                            if(user.Data is not null)
+                            if (user.Data is not null)
                             {
-                                if(user.Data.SettingNotification.NewCertificatePush) userIds.Add(user.Data.Id);
-                                if(!user.Data.SettingNotification.NewCertificateMail) continue;
-                                
+                                if (user.Data.SettingNotification.NewCertificatePush) userIds.Add(user.Data.Id);
+                                if (!user.Data.SettingNotification.NewCertificateMail) continue;
+
                                 ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
-                                if(listFunction.Data is not null)
+                                if (listFunction.Data is not null)
                                 {
-                                    if(listFunction.Data.Where(x => x.IsPresence).Any())
+                                    if (listFunction.Data.Where(x => x.IsPresence).Any())
                                     {
 
                                         List<string> functions = listFunction.Data.Where(x => x.IsPresence).Select(x => x.Name).ToList();
                                         decimal hours = listFunction.Data.Where(x => x.IsPresence).Sum(x => x.Hours);
                                         string functionName = "";
-                                        if(functions.Count > 1)
+                                        if (functions.Count > 1)
                                         {
                                             functionName = $"{functions.Count} funções";
                                         }
@@ -241,31 +243,42 @@ namespace api_camem.src.Services
                                         }
 
                                         string endDate = "";
-                                        if(eventResponse.Data.EndDate is not null)
+                                        if (eventResponse.Data.EndDate is not null)
                                         {
                                             endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
                                         }
 
                                         await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
-                                        
-                                        string html = customCertificate.Data is null ? "" : customCertificate.Data.html;
+
+                                        string html = customCertificate.Data is null ? "" : customCertificate.Data.Html;
                                         string dates = eventResponse.Data.StartDate.ToString("dd/MM/yyyy");
 
-                                        if(eventResponse.Data.EndDate is not null) dates += " até " + eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
+                                        if (eventResponse.Data.EndDate is not null) dates += " até " + eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
 
-                                        if(customCertificate.Data is not null)
+                                        if (customCertificate.Data is not null)
                                         {
-                                            html = html.Replace("{{name_participant}}", eventParticipant.Name)
+                                            html = html.Replace("{{body_text}}", customCertificate.Data.BodyText)
+                                            .Replace("{{name}}", eventParticipant.Name)
                                             .Replace("{{function}}", functionName)
                                             .Replace("{{name_event}}", eventResponse.Data.Title)
                                             .Replace("{{dates}}", dates)
-                                            .Replace("{{hours}}", hours.ToString())
+                                            .Replace("{{hours}}", eventParticipant.Hours.ToString())
                                             .Replace("{{register_book_number}}", eventResponse.Data.RegisterBookNumber)
+                                            .Replace("{{register_folder_number}}", eventResponse.Data.RegisterFolderNumber)
                                             .Replace("{{key_certificate}}", eventResponse.Data.KeyCertificate)
-                                            .Replace("{{ui_uri}}", UiURI);
+                                            .Replace("{{ui_uri}}", UiURI)
+                                            .Replace("{{signer1_name}}", customCertificate.Data.Signer1Name)
+                                            .Replace("{{signer1_role}}", customCertificate.Data.Signer1Role)
+                                            .Replace("{{signer1_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer1Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer1Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />")
+                                            .Replace("{{signer2_name}}", customCertificate.Data.Signer2Name)
+                                            .Replace("{{signer2_role}}", customCertificate.Data.Signer2Role)
+                                            .Replace("{{signer2_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer2Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer2Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />")
+                                            .Replace("{{signer3_name}}", customCertificate.Data.Signer3Name)
+                                            .Replace("{{signer3_role}}", customCertificate.Data.Signer3Role)
+                                            .Replace("{{signer3_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer3Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer3Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />");
                                         }
-                                        
-                                        var res = await certificateService.CreateAsync(new ()
+
+                                        var res = await certificateService.CreateAsync(new()
                                         {
                                             Name = eventResponse.Data.Title,
                                             EventId = eventResponse.Data.Id,
@@ -287,17 +300,17 @@ namespace api_camem.src.Services
                 {
                     await notificationService.SendToManyAsync(userIds, new()
                     {
-                        Link      = $"/my-certificates",
-                        Title     = "Novo Certificado",
-                        Message   = $"Você tem um novo certificado.",
-                        Type      = "Notificacao",
+                        Link = $"/my-certificates",
+                        Title = "Novo Certificado",
+                        Message = $"Você tem um novo certificado.",
+                        Type = "Notificacao",
                         CreatedBy = request.CreatedBy
                     });
                 }
 
                 return new(response.Data, 200, "Evento finalizado com sucesso");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
@@ -309,17 +322,17 @@ namespace api_camem.src.Services
                 if (request.Photo == null || request.Photo.Length == 0) return new(null, 400, "Falha ao salvar foto de capa");
 
                 ResponseApi<Event?> evenT = await repository.GetByIdAsync(request.Id);
-                if(evenT.Data is null) return new(null, 404, "Falha ao salvar foto de capa");
+                if (evenT.Data is null) return new(null, 404, "Falha ao salvar foto de capa");
 
                 string uriPhoto = await uploadHandler.UploadAttachment("events", request.Photo, "/api/events/photo");
                 evenT.Data.UpdatedAt = DateTime.UtcNow;
                 evenT.Data.Photo = uriPhoto;
 
                 ResponseApi<Event?> response = await repository.UpdateAsync(evenT.Data);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao salvar foto de capa");
+                if (!response.IsSuccess) return new(null, 400, "Falha ao salvar foto de capa");
                 return new(evenT.Data, 200, "Foto de capa salva com sucesso");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
@@ -329,32 +342,32 @@ namespace api_camem.src.Services
             try
             {
                 ResponseApi<Event?> evenT = await repository.GetByIdAsync(request.Id);
-                if(evenT.Data is null) return new(null, 404, "Falha ao remover foto de capa");
+                if (evenT.Data is null) return new(null, 404, "Falha ao remover foto de capa");
 
                 evenT.Data.UpdatedAt = DateTime.UtcNow;
                 evenT.Data.Photo = "";
 
                 ResponseApi<Event?> response = await repository.UpdateAsync(evenT.Data);
-                if(!response.IsSuccess) return new(null, 400, "Falha ao remover foto de capa");
+                if (!response.IsSuccess) return new(null, 400, "Falha ao remover foto de capa");
                 return new(evenT.Data, 200, "Foto de capa salva com sucesso");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
         }
         #endregion
-        
+
         #region DELETE
         public async Task<ResponseApi<Event>> DeleteAsync(DeleteDTO request)
         {
             try
             {
                 ResponseApi<Event> evenT = await repository.DeleteAsync(request);
-                if(!evenT.IsSuccess) return new(null, 400, evenT.Message);
+                if (!evenT.IsSuccess) return new(null, 400, evenT.Message);
                 return new(null, 204, "Excluída com sucesso");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }

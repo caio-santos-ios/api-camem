@@ -13,6 +13,7 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
         Task<ResponseApi<CustomCertificate?>> CreateAsync(CreateCustomCertificateDTO request);
         Task<ResponseApi<CustomCertificate?>> UpdateAsync(UpdateCustomCertificateDTO request);
+        Task<ResponseApi<string?>> UploadSignature(UploadSignatureCustomCertificateDTO request);
         Task<ResponseApi<CustomCertificate>> DeleteAsync(string id);
     }
 }

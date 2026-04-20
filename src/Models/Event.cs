@@ -36,5 +36,11 @@ namespace api_camem.src.Models
 
         [BsonElement("registerBookNumber")]
         public string RegisterBookNumber {get;set;} = string.Empty;       
+        
+        [BsonElement("registerFolderNumber")]
+        public string RegisterFolderNumber {get;set;} = string.Empty;       
+        
+        [BsonElement("certificateId")]
+        public string CertificateId {get;set;} = string.Empty;       
     }
 }

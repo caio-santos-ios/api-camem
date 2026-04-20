@@ -73,6 +73,17 @@ namespace api_camem.src.Controllers
         }        
         
         [Authorize]
+        [HttpPut("upload-signature")]
+        public async Task<IActionResult> UploadSignature([FromForm] UploadSignatureCustomCertificateDTO body)
+        {
+            if (body == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<string?> response = await service.UploadSignature(body);
+
+            return StatusCode(response.StatusCode, new { response.Result });
+        }        
+        
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {

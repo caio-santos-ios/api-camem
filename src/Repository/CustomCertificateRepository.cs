@@ -24,30 +24,17 @@ namespace api_camem.src.Repository
                     new("$skip", pagination.Skip),
                     new("$limit", pagination.Limit),
 
-                    MongoUtil.Lookup("events", ["$eventId"], ["$_id"], "_event", [["deleted", false]], 1),
-                    MongoUtil.Lookup("users", ["$userId"], ["$_id"], "_user", [["deleted", false]], 1),
-                    MongoUtil.Lookup("event_participants", ["$userId"], ["$userId"], "_event_participant", [["deleted", false]], 1),
-
                     new("$addFields", new BsonDocument
                     {
                         {"id", new BsonDocument("$toString", "$_id")},
-                        {"nameEvent", MongoUtil.First("_event.title")},
-                        {"startDate", MongoUtil.First("_event.startDate")},
-                        {"endDate", MongoUtil.First("_event.endDate")},
-                        {"name", MongoUtil.First("_user.name")},
                     }),
                     
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
                         {"id", 1},
-                        {"startDate", 1},
-                        {"endDate", 1},
-                        {"hours", 1},
-                        {"nameEvent", 1},
                         {"name", 1},
-                        {"keyCustomCertificate", 1},
-                        {"functions", 1},
+                        {"createdAt", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };
@@ -68,7 +55,7 @@ namespace api_camem.src.Repository
             {
                 BsonDocument[] pipeline = [
                     new("$match", new BsonDocument{
-                        // {"_id", new ObjectId(id)},
+                        {"_id", new ObjectId(id)},
                         {"deleted", false}
                     }),
                     new("$addFields", new BsonDocument {
