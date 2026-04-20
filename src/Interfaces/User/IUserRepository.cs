@@ -19,6 +19,7 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<User?>> GetByEmailAsync(string email);
         Task<ResponseApi<User?>> GetByEmailExistedAsync(string email, string id);
         Task<ResponseApi<User?>> GetByCodeAccessAsync(string codeAccess);
+        Task<ResponseApi<User?>> GetByCodeAccessValidatedAsync(string codeAccess);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(PaginationUtil<User> pagination);
         Task<int> GetCountDocumentsAsync(PaginationUtil<User> pagination);
         Task<bool> GetAccessValitedAsync(string codeAccess);

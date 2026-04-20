@@ -12,7 +12,7 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<Event?>> CreateAsync(CreateEventDTO request);
         Task<ResponseApi<Event?>> UpdateAsync(UpdateEventDTO request);
         Task<ResponseApi<Event?>> PublishAsync(UpdateEventDTO request);
-        Task<ResponseApi<Event?>> FinishAsync(UpdateEventDTO request);
+        Task<ResponseApi<Event?>> FinishAsync(FinishEventDTO request);
         Task<ResponseApi<Event?>> SavePhotoAsync(SaveEventPhotoDTO request);
         Task<ResponseApi<Event?>> RemovePhotoAsync(RemoveEventPhotoDTO request);
         Task<ResponseApi<Event>> DeleteAsync(DeleteDTO request);

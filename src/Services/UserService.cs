@@ -109,7 +109,7 @@ namespace api_camem.src.Services
                     UserName = $"usuário{access.CodeAccess}",
                     Email = request.Email,
                     Name = request.Name,
-                    Password = "",
+                    Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     CodeAccess = "",
                     CodeAccessExpiration = null,
                     ValidatedAccess = true,
@@ -174,6 +174,7 @@ namespace api_camem.src.Services
                     user.Data.Modules = newProfile.Data.Modules;
 
                     user.Data.ProfileUserId = request.ProfileUserId;
+                    user.Data.Role = newProfile.Data.Role;
                 }
 
                 user.Data.UpdatedAt = DateTime.UtcNow;

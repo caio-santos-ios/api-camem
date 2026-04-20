@@ -336,7 +336,7 @@ namespace api_camem.src.Services
                 if (string.IsNullOrEmpty(request.NewPassword)) return new(null, 400, "Confirmação da senha é obrigatória");
                 if (request.Password != request.NewPassword) return new(null, 400, "As senhas não podem ser diferentes");
 
-                ResponseApi<User?> responseUser = await userRepository.GetByCodeAccessAsync(request.CodeAccess);
+                ResponseApi<User?> responseUser = await userRepository.GetByCodeAccessValidatedAsync(request.CodeAccess);
                 if(responseUser.Data is null) return new(null, 400, "Falha ao alterar senha");
 
                 if(responseUser.Data.CodeAccessExpiration < DateTime.UtcNow) return new(null, 400, "Código expirou, solicite um novo e-mail.");

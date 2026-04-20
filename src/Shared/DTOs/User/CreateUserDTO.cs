@@ -21,7 +21,11 @@ namespace api_camem.src.Shared.DTOs
         
         [Required(ErrorMessage = "O RA é obrigatório.")]
         [Display(Order = 5)]
-        public string RA { get; set; } = string.Empty;    
+        public string RA { get; set; } = string.Empty;  
+        
+        [Required(ErrorMessage = "A Senha é obrigatória.")]
+        [Display(Order = 66)]
+        public string Password { get; set; } = string.Empty;    
         public bool Blocked { get; set; } = false;
     }
 

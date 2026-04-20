@@ -58,7 +58,7 @@ namespace api_camem.src.Controllers
         
         [Authorize]
         [HttpPut("publish")]
-        public async Task<IActionResult> UpdatePublish([FromBody] UpdateEventDTO body)
+        public async Task<IActionResult> Publish([FromBody] UpdateEventDTO body)
         {
             if (body == null) return BadRequest("Dados inválidos.");
 
@@ -68,7 +68,7 @@ namespace api_camem.src.Controllers
         
         [Authorize]
         [HttpPut("finish")]
-        public async Task<IActionResult> UpdateFinish([FromBody] UpdateEventDTO body)
+        public async Task<IActionResult> Finish([FromBody] FinishEventDTO body)
         {
             if (body == null) return BadRequest("Dados inválidos.");
 

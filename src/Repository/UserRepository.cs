@@ -334,6 +334,18 @@ namespace api_camem.src.Repository
                 return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
             }
         }
+        public async Task<ResponseApi<User?>> GetByCodeAccessValidatedAsync(string codeAccess)
+        {
+            try
+            {
+                User? user = await context.Users.Find(x => x.CodeAccess == codeAccess && !x.Deleted).FirstOrDefaultAsync();
+                return new(user);
+            }
+            catch
+            {
+                return new(null, 500, "Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+            }
+        }
         public async Task<bool> GetAccessValitedAsync(string id)
         {
             try

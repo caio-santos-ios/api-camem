@@ -191,7 +191,7 @@ namespace api_camem.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
             }
         }
-        public async Task<ResponseApi<Event?>> FinishAsync(UpdateEventDTO request)
+        public async Task<ResponseApi<Event?>> FinishAsync(FinishEventDTO request)
         {
             try
             {
@@ -202,6 +202,7 @@ namespace api_camem.src.Services
 
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
                 eventResponse.Data.Status = "Finalizado";
+                eventResponse.Data.RegisterBookNumber = request.RegisterBookNumber;
 
                 ResponseApi<List<EventParticipant>> eventParticipants = await eventParticipantRepository.GetAllByEventIdAsync(request.Id);
 
@@ -254,11 +255,13 @@ namespace api_camem.src.Services
 
                                         if(customCertificate.Data is not null)
                                         {
-                                            html = html.Replace("{{name_participant}}", user.Data.Name)
+                                            html = html.Replace("{{name_participant}}", eventParticipant.Name)
                                             .Replace("{{function}}", functionName)
                                             .Replace("{{name_event}}", eventResponse.Data.Title)
                                             .Replace("{{dates}}", dates)
                                             .Replace("{{hours}}", hours.ToString())
+                                            .Replace("{{register_book_number}}", eventResponse.Data.RegisterBookNumber)
+                                            .Replace("{{key_certificate}}", eventResponse.Data.KeyCertificate)
                                             .Replace("{{ui_uri}}", UiURI);
                                         }
                                         
