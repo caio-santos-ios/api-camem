@@ -18,8 +18,13 @@ namespace api_camem.src.Filters
         ];
         private static readonly HashSet<string> AuditPaths =
         [
-            "/api/customers",
-            "/api/suppliers",
+            "/api/users",
+            "/api/events",
+            "/api/event-participants",
+            "/api/event-participant-functions",
+            "/api/profile-users",
+            "/api/certificates",
+            "/api/custom-certificates"
         ];
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
