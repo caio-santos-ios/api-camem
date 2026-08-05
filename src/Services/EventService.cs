@@ -171,7 +171,6 @@ namespace api_camem.src.Services
                     }
                 }
 
-                // List<string> userIds = eventParticipants.Data.Select(u => u.UserId).ToList();
                 if (userIds.Count > 0)
                 {
                     await notificationService.SendToManyAsync(userIds, new()

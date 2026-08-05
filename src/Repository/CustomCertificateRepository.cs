@@ -126,8 +126,8 @@ namespace api_camem.src.Repository
         {
             try
             {
-                CustomCertificate? paymentMethod = await context.CustomCertificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                return new(paymentMethod);
+                CustomCertificate? customCertificate = await context.CustomCertificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                return new(customCertificate);
             }
             catch
             {
@@ -190,13 +190,13 @@ namespace api_camem.src.Repository
         #endregion
         
         #region CREATE
-        public async Task<ResponseApi<CustomCertificate?>> CreateAsync(CustomCertificate paymentMethod)
+        public async Task<ResponseApi<CustomCertificate?>> CreateAsync(CustomCertificate customCertificate)
         {
             try
             {
-                await context.CustomCertificates.InsertOneAsync(paymentMethod);
+                await context.CustomCertificates.InsertOneAsync(customCertificate);
 
-                return new(paymentMethod, 201, "Certificado criada com sucesso");
+                return new(customCertificate, 201, "Certificado criada com sucesso");
             }
             catch
             {
@@ -206,13 +206,13 @@ namespace api_camem.src.Repository
         #endregion
         
         #region UPDATE
-        public async Task<ResponseApi<CustomCertificate?>> UpdateAsync(CustomCertificate paymentMethod)
+        public async Task<ResponseApi<CustomCertificate?>> UpdateAsync(CustomCertificate customCertificate)
         {
             try
             {
-                await context.CustomCertificates.ReplaceOneAsync(x => x.Id == paymentMethod.Id, paymentMethod);
+                await context.CustomCertificates.ReplaceOneAsync(x => x.Id == customCertificate.Id, customCertificate);
 
-                return new(paymentMethod, 200, "Certificado atualizada com sucesso");
+                return new(customCertificate, 200, "Certificado atualizada com sucesso");
             }
             catch
             {
@@ -226,14 +226,14 @@ namespace api_camem.src.Repository
         {
             try
             {
-                CustomCertificate? paymentMethod = await context.CustomCertificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
-                if(paymentMethod is null) return new(null, 404, "Certificado não encontrado");
-                paymentMethod.Deleted = true;
-                paymentMethod.DeletedAt = DateTime.UtcNow;
+                CustomCertificate? customCertificate = await context.CustomCertificates.Find(x => x.Id == id && !x.Deleted).FirstOrDefaultAsync();
+                if(customCertificate is null) return new(null, 404, "Certificado não encontrado");
+                customCertificate.Deleted = true;
+                customCertificate.DeletedAt = DateTime.UtcNow;
 
-                await context.CustomCertificates.ReplaceOneAsync(x => x.Id == id, paymentMethod);
+                await context.CustomCertificates.ReplaceOneAsync(x => x.Id == id, customCertificate);
 
-                return new(paymentMethod, 204, "Certificado excluída com sucesso");
+                return new(customCertificate, 204, "Certificado excluída com sucesso");
             }
             catch
             {

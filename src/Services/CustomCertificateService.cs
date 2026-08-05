@@ -3,6 +3,7 @@ using api_camem.src.Interfaces;
 using api_camem.src.Models;
 using api_camem.src.Models.Base;
 using api_camem.src.Shared.DTOs;
+using api_camem.src.Shared.DTOs.CustomCertificate;
 using api_camem.src.Shared.Utils;
 using AutoMapper;
 using Docnet.Core;
@@ -11,7 +12,7 @@ using SkiaSharp;
 
 namespace api_camem.src.Services
 {
-    public class CustomCertificateService(ICustomCertificateRepository repository, IMapper _mapper, UploadHandler uploadHandler) : ICustomCertificateService
+    public class CustomCertificateService(ICustomCertificateRepository repository, IMapper _mapper, UploadHandler uploadHandler, IEventRepository eventRepository, IEventParticipantRepository eventParticipantRepository, IEventParticipantFunctionRepository eventParticipantFunctionRepository, ICertificateRepository certificateRepository) : ICustomCertificateService
     {
         #region READ
         public async Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllDTO request)
@@ -94,6 +95,91 @@ namespace api_camem.src.Services
 
                 if (response.Data is null) return new(null, 400, "Falha ao criar Certificado.");
                 return new(response.Data, 201, "Certificado criado com sucesso.");
+            }
+            catch
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde");
+            }
+        }
+        public async Task<ResponseApi<CustomCertificate?>> CreateCertificateManualAsync(CreateCertificateManualDTO request)
+        {
+            try
+            {
+                List<CreateCertificateManualParticipantFunction> createCertificateManualParticipantFunctions = [];
+
+                var list = request.ParticipantFunction.Split(";");
+                foreach (var item in list)
+                {
+                    var function = item.Split(",");
+                    createCertificateManualParticipantFunctions.Add(new ()
+                    {
+                       Name = function[0],
+                       Hours = Convert.ToInt32(function[1]) 
+                    });
+                }
+
+                Event evenT = new()
+                {
+                    Title = request.NameEvent,
+                    Description = request.NameEvent,
+                    StartDate = request.StartDateEvent,
+                    EndDate = request.EndDateEvent,
+                    Status = "Finalizado",
+                    KeyCertificate = request.KeyCertificateEvent,
+                    RegisterBookNumber = request.RegisterBookNumberEvent,
+                    RegisterFolderNumber = request.RegisterFolderNumberEvent,
+                    CertificateId = "",
+                    UserIds = [],
+                    CreatedBy = request.CreatedBy,
+                    CreatedAt = DateTime.Now
+                };
+
+                await eventRepository.CreateAsync(evenT);
+
+                EventParticipant eventParticipant = new()
+                {
+                    Name = request.NameParticipantEvent,
+                    Hours = createCertificateManualParticipantFunctions.Sum(x => x.Hours),
+                    UserId = request.UserId,
+                    EventId = evenT.Id,
+                    CreatedBy = request.CreatedBy,
+                    CreatedAt = DateTime.Now
+                };
+
+                await eventParticipantRepository.CreateAsync(eventParticipant);
+
+                foreach (CreateCertificateManualParticipantFunction participantFunction in createCertificateManualParticipantFunctions)
+                {
+                    EventParticipantFunction eventParticipantFunction = new()
+                    {
+                        EventId = evenT.Id,
+                        EventParticipantId = eventParticipant.Id,
+                        Name = participantFunction.Name,
+                        Hours = participantFunction.Hours,
+                        IsPresence = true,
+                        CreatedBy = request.CreatedBy,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    await eventParticipantFunctionRepository.CreateAsync(eventParticipantFunction);
+                }
+
+                string uriCertificate = await uploadHandler.UploadAttachment("certificate-manual", request.Certificate!, "/api/certificate-manual");
+
+                Certificate certificate = new()
+                {
+                    Origin = "manual",
+                    Name = request.NameEvent,
+                    EventId = evenT.Id,
+                    UserId = request.UserId,
+                    Hours = createCertificateManualParticipantFunctions.Sum(x => x.Hours),
+                    KeyCertificate = request.KeyCertificateEvent,
+                    Html = uriCertificate
+                };
+
+                await certificateRepository.CreateAsync(certificate);
+
+                return new(null, 201, "Certificado manual criado com sucesso.");
             }
             catch
             {

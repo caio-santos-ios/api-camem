@@ -2,6 +2,7 @@ using api_camem.src.Interfaces;
 using api_camem.src.Models;
 using api_camem.src.Models.Base;
 using api_camem.src.Shared.DTOs;
+using api_camem.src.Shared.DTOs.CustomCertificate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -57,6 +58,17 @@ namespace api_camem.src.Controllers
             if (body == null) return BadRequest("Dados inválidos.");
 
             ResponseApi<CustomCertificate?> response = await service.CreateAsync(body);
+
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+       
+        [Authorize]
+        [HttpPost("certificate-manual")]
+        public async Task<IActionResult> CreateCertificateManual([FromForm] CreateCertificateManualDTO body)
+        {
+            if (body == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<CustomCertificate?> response = await service.CreateCertificateManualAsync(body);
 
             return StatusCode(response.StatusCode, new { response.Result });
         }

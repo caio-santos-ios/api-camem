@@ -1,6 +1,7 @@
 using api_camem.src.Models;
 using api_camem.src.Models.Base;
 using api_camem.src.Shared.DTOs;
+using api_camem.src.Shared.DTOs.CustomCertificate;
 
 namespace api_camem.src.Interfaces
 {
@@ -12,6 +13,7 @@ namespace api_camem.src.Interfaces
         Task<ResponseApi<dynamic?>> GetValidateKeyAsync(string keyCertificate);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllDTO request);
         Task<ResponseApi<CustomCertificate?>> CreateAsync(CreateCustomCertificateDTO request);
+        Task<ResponseApi<CustomCertificate?>> CreateCertificateManualAsync(CreateCertificateManualDTO request);
         Task<ResponseApi<CustomCertificate?>> UpdateAsync(UpdateCustomCertificateDTO request);
         Task<ResponseApi<string?>> UploadSignature(UploadSignatureCustomCertificateDTO request);
         Task<ResponseApi<CustomCertificate>> DeleteAsync(string id);
