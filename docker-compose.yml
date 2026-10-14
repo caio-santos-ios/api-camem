@@ -1,0 +1,38 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb-camem
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-Ca98244696}
+      MONGO_INITDB_DATABASE: ${DATABASE_NAME:-camem}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - camem_network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-camem
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    ports:
+      - "5143:5143"
+    env_file:
+      - .env
+    volumes:
+      - api_uploads:/app/wwwroot/uploads
+    networks:
+      - camem_network
+
+volumes:
+  mongo_data:
+  api_uploads:
+
+networks:
+  camem_network:
+    driver: bridge
