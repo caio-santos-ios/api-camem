@@ -49,6 +49,7 @@ namespace api_camem.src.Repository
                         {"keyCertificate", 1},
                         {"functions", 1},
                         {"html", 1},
+                        {"origin", 1},
                     }),
                     new("$sort", pagination.PipelineSort),
                 };

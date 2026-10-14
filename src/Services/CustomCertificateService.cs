@@ -111,10 +111,10 @@ namespace api_camem.src.Services
                 foreach (var item in list)
                 {
                     var function = item.Split(",");
-                    createCertificateManualParticipantFunctions.Add(new ()
+                    createCertificateManualParticipantFunctions.Add(new()
                     {
-                       Name = function[0],
-                       Hours = Convert.ToInt32(function[1]) 
+                        Name = function[0],
+                        Hours = Convert.ToInt32(function[1])
                     });
                 }
 
