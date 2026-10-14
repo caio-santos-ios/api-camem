@@ -8,7 +8,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-Ca98244696}
       MONGO_INITDB_DATABASE: ${DATABASE_NAME:-camem}
     volumes:
-      - mongo_data:/data/db
+      - mongo_camem_data:/data/db
     networks:
       - camem_network
 
@@ -25,13 +25,13 @@ services:
     env_file:
       - .env
     volumes:
-      - api_uploads:/app/wwwroot/uploads
+      - api_camem_uploads:/app/wwwroot/uploads
     networks:
       - camem_network
 
 volumes:
-  mongo_data:
-  api_uploads:
+  mongo_camem_data:
+  api_camem_uploads:
 
 networks:
   camem_network:
