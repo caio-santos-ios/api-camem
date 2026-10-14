@@ -11,6 +11,8 @@ services:
       - mongo_camem_data:/data/db
     networks:
       - camem_network
+    ports:
+      - "127.0.0.1:27019:27017"
 
   api:
     build:
