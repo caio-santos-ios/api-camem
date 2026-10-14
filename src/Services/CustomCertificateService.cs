@@ -246,9 +246,15 @@ namespace api_camem.src.Services
 
                 return new(uriPhoto, 200, "Atualizada com sucesso");
             }
+            // catch (Exception ex)
+            // {
+            //     return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+            // }
             catch (Exception ex)
             {
-                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde. {ex.Message}");
+                var inner = ex;
+                while (inner.InnerException != null) inner = inner.InnerException;
+                return new(null, 500, $"Erro: {ex.Message} | Causa raiz: {inner.GetType().Name}: {inner.Message}");
             }
         }
 
