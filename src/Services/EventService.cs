@@ -221,7 +221,7 @@ namespace api_camem.src.Services
                             if (user.Data is not null)
                             {
                                 if (user.Data.SettingNotification.NewCertificatePush) userIds.Add(user.Data.Id);
-                                if (!user.Data.SettingNotification.NewCertificateMail) continue;
+                                // Não usar "continue" aqui: a preferência de e-mail não pode impedir a geração do certificado
 
                                 ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
                                 if (listFunction.Data is not null)
@@ -247,7 +247,10 @@ namespace api_camem.src.Services
                                             endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
                                         }
 
-                                        await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                                        // Chave única por certificado (antes usava a chave do evento, igual para todos os participantes)
+                                        string keyCertificate = Guid.NewGuid().ToString("N");
+
+                                        if (user.Data.SettingNotification.NewCertificateMail) await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
 
                                         string html = customCertificate.Data is null ? "" : customCertificate.Data.Html;
                                         string dates = eventResponse.Data.StartDate.ToString("dd/MM/yyyy");
@@ -264,7 +267,7 @@ namespace api_camem.src.Services
                                             .Replace("{{hours}}", eventParticipant.Hours.ToString())
                                             .Replace("{{register_book_number}}", eventResponse.Data.RegisterBookNumber)
                                             .Replace("{{register_folder_number}}", eventResponse.Data.RegisterFolderNumber)
-                                            .Replace("{{key_certificate}}", eventResponse.Data.KeyCertificate)
+                                            .Replace("{{key_certificate}}", keyCertificate)
                                             .Replace("{{ui_uri}}", UiURI)
                                             .Replace("{{signer1_name}}", customCertificate.Data.Signer1Name)
                                             .Replace("{{signer1_role}}", customCertificate.Data.Signer1Role)
@@ -284,7 +287,7 @@ namespace api_camem.src.Services
                                             UserId = eventParticipant.UserId,
                                             Functions = functions,
                                             Hours = hours,
-                                            KeyCertificate = eventResponse.Data.KeyCertificate,
+                                            KeyCertificate = keyCertificate,
                                             CreatedBy = request.CreatedBy,
                                             Html = html
                                         });
