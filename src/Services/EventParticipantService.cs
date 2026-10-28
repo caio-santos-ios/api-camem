@@ -11,7 +11,6 @@ namespace api_camem.src.Services
     (
         IEventParticipantRepository repository,
         IEventRepository eventRepository,
-        IEventParticipantFunctionRepository eventParticipantFunctionRepository,
         IMapper _mapper
     ) : IEventParticipantService
     {
@@ -65,6 +64,8 @@ namespace api_camem.src.Services
             try
             {
                 EventParticipant eventParticipant = _mapper.Map<EventParticipant>(request);
+                eventParticipant.IsPresence = true;
+                eventParticipant.NotesPresence = string.Empty;
 
                 ResponseApi<EventParticipant?> response = await repository.CreateAsync(eventParticipant);
 
@@ -77,13 +78,9 @@ namespace api_camem.src.Services
                     await eventRepository.UpdateAsync(evenT.Data);
                 }
 
-                ResponseApi<EventParticipantFunction?> function = await eventParticipantFunctionRepository.GetByIdAsync(request.FunctionId);
-                if(function.Data is not null)
-                {
-                    function.Data.EventParticipantId = response.Data.Id;
-
-                    await eventParticipantFunctionRepository.UpdateAsync(function.Data);
-                }
+                // A função é apenas um modelo (nome/horas) e pode ser compartilhada por vários participantes.
+                // O vínculo fica no próprio participante (FunctionId); o documento da função NÃO é alterado aqui
+                // (antes o EventParticipantId da função era sobrescrito e só o último participante gerava certificado).
 
                 return new(response.Data, 201, "Participante criado com sucesso.");
             }
@@ -106,6 +103,9 @@ namespace api_camem.src.Services
                 EventParticipant eventParticipant = _mapper.Map<EventParticipant>(request);
                 eventParticipant.UpdatedAt = DateTime.UtcNow;
                 eventParticipant.CreatedAt = eventResponse.Data.CreatedAt;
+                // A presença é controlada apenas pela tela de presença; a edição do participante não deve resetá-la
+                eventParticipant.IsPresence = eventResponse.Data.IsPresence;
+                eventParticipant.NotesPresence = eventResponse.Data.NotesPresence;
 
                 ResponseApi<EventParticipant?> response = await repository.UpdateAsync(eventParticipant);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
@@ -117,25 +117,8 @@ namespace api_camem.src.Services
                     await eventRepository.UpdateAsync(evenT.Data);
                 }
 
-                if(request.FunctionId != eventResponse.Data.FunctionId)
-                {
-                    ResponseApi<EventParticipantFunction?> function = await eventParticipantFunctionRepository.GetByIdAsync(request.FunctionId);
-                    ResponseApi<EventParticipantFunction?> functionLast = await eventParticipantFunctionRepository.GetByIdAsync(eventResponse.Data.FunctionId);
-                    
-                    if(function.Data is not null)
-                    {
-                        function.Data.EventParticipantId = eventResponse.Data.Id;
-
-                        await eventParticipantFunctionRepository.UpdateAsync(function.Data);
-                    }
-                    
-                    if(functionLast.Data is not null)
-                    {
-                        functionLast.Data.EventParticipantId = "";
-
-                        await eventParticipantFunctionRepository.UpdateAsync(functionLast.Data);
-                    }
-                }
+                // Troca de função: basta o FunctionId do participante (já gravado acima).
+                // Não mexer no documento da função, pois ele pode estar em uso por outros participantes.
 
                 return new(response.Data, 200, "Atualizado com sucesso");
             }
@@ -152,16 +135,9 @@ namespace api_camem.src.Services
                 if(eventResponse.Data is null) return new(null, 404, "Falha ao atualizar");
 
                 eventResponse.Data.UpdatedAt = DateTime.UtcNow;
-
-                ResponseApi<EventParticipantFunction?> function = await eventParticipantFunctionRepository.GetByIdAsync(request.FunctionId);
-
-                if(function.Data is not null)
-                {
-                    function.Data.IsPresence = request.IsPresence;
-                    function.Data.NotesPresence = request.NotesPresence;
-
-                    await eventParticipantFunctionRepository.UpdateAsync(function.Data);
-                }
+                // Presença gravada no participante (antes era gravada na função compartilhada, afetando todos que a usavam)
+                eventResponse.Data.IsPresence = request.IsPresence;
+                eventResponse.Data.NotesPresence = request.NotesPresence;
 
                 ResponseApi<EventParticipant?> response = await repository.UpdateAsync(eventResponse.Data);
                 if(!response.IsSuccess) return new(null, 400, "Falha ao atualizar");
@@ -186,7 +162,8 @@ namespace api_camem.src.Services
                 ResponseApi<Event?> evenT = await eventRepository.GetByIdAsync(eventParticipant.Data.EventId);
                 if(evenT.Data is not null)
                 {
-                    evenT.Data.UserIds = evenT.Data.UserIds.Where(x => x != eventParticipant.Data.Id).ToList();
+                    // UserIds guarda o id do usuário (não o id do participante)
+                    evenT.Data.UserIds = evenT.Data.UserIds.Where(x => x != eventParticipant.Data.UserId).ToList();
 
                     await eventRepository.UpdateAsync(evenT.Data);
                 }

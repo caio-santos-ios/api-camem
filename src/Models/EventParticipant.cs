@@ -24,5 +24,12 @@ namespace api_camem.src.Models
 
         [BsonElement("hours")]
         public decimal Hours {get;set;} = 0;
+
+        // Presença por participante (antes ficava na função, compartilhada entre todos que a usavam)
+        [BsonElement("isPresence")]
+        public bool IsPresence {get;set;} = true;
+
+        [BsonElement("notesPresence")]
+        public string NotesPresence {get;set;} = string.Empty;
     }
 }

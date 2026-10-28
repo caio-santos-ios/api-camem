@@ -34,8 +34,9 @@ namespace api_camem.src.Repository
                         {"userCpf", MongoUtil.First("_user.cpf")},
                         {"userRa", MongoUtil.First("_user.ra")},
                         {"functionName", MongoUtil.First("_function.name")},
-                        {"isPresence", MongoUtil.First("_function.isPresence")},
-                        {"notesPresence", MongoUtil.First("_function.notesPresence")},
+                        // Presença é do participante (documentos antigos sem o campo = presente)
+                        {"isPresence", new BsonDocument("$ifNull", new BsonArray { "$isPresence", true })},
+                        {"notesPresence", new BsonDocument("$ifNull", new BsonArray { "$notesPresence", "" })},
                     }),
 
                     new("$project", new BsonDocument

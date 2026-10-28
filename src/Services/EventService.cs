@@ -143,30 +143,18 @@ namespace api_camem.src.Services
                             if (user.Data.SettingNotification.NewEventPush) userIds.Add(user.Data.Id);
                             if (!user.Data.SettingNotification.NewEventMail) continue;
 
-                            ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
+                            var (functions, hours, _) = await ResolveParticipantFunctionInfoAsync(eventParticipant);
+                            string functionName = functions.Count > 1
+                                ? $"{functions.Count} funções"
+                                : (functions.Count == 0 ? "Sem função" : functions[0]);
 
-                            if (listFunction.Data is not null)
+                            string endDate = "";
+                            if (eventResponse.Data.EndDate is not null)
                             {
-                                List<string> functions = listFunction.Data.Select(x => x.Name).ToList();
-                                decimal hours = listFunction.Data.Sum(x => x.Hours);
-                                string functionName = "";
-                                if (functions.Count > 1)
-                                {
-                                    functionName = $"{functions.Count} funções";
-                                }
-                                else
-                                {
-                                    functionName = functions.Count == 0 ? "Sem função" : functions[0];
-                                }
-
-                                string endDate = "";
-                                if (eventResponse.Data.EndDate is not null)
-                                {
-                                    endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
-                                }
-
-                                await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+                                endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
                             }
+
+                            await mailHandler.SendMailAsync(user.Data.Email, "Novo Evento", await mailTemplate.EventPublish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
                         }
                     }
                 }
@@ -223,75 +211,63 @@ namespace api_camem.src.Services
                                 if (user.Data.SettingNotification.NewCertificatePush) userIds.Add(user.Data.Id);
                                 // Não usar "continue" aqui: a preferência de e-mail não pode impedir a geração do certificado
 
-                                ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
-                                if (listFunction.Data is not null)
+                                var (functions, hours, isPresence) = await ResolveParticipantFunctionInfoAsync(eventParticipant);
+                                if (isPresence)
                                 {
-                                    if (listFunction.Data.Where(x => x.IsPresence).Any())
+                                    string functionName = functions.Count > 1
+                                        ? $"{functions.Count} funções"
+                                        : (functions.Count == 0 ? "Sem função" : functions[0]);
+
+                                    string endDate = "";
+                                    if (eventResponse.Data.EndDate is not null)
                                     {
-
-                                        List<string> functions = listFunction.Data.Where(x => x.IsPresence).Select(x => x.Name).ToList();
-                                        decimal hours = listFunction.Data.Where(x => x.IsPresence).Sum(x => x.Hours);
-                                        string functionName = "";
-                                        if (functions.Count > 1)
-                                        {
-                                            functionName = $"{functions.Count} funções";
-                                        }
-                                        else
-                                        {
-                                            functionName = functions.Count == 0 ? "Sem função" : functions[0];
-                                        }
-
-                                        string endDate = "";
-                                        if (eventResponse.Data.EndDate is not null)
-                                        {
-                                            endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
-                                        }
-
-                                        // Chave única por certificado (antes usava a chave do evento, igual para todos os participantes)
-                                        string keyCertificate = Guid.NewGuid().ToString("N");
-
-                                        if (user.Data.SettingNotification.NewCertificateMail) await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
-
-                                        string html = customCertificate.Data is null ? "" : customCertificate.Data.Html;
-                                        string dates = eventResponse.Data.StartDate.ToString("dd/MM/yyyy");
-
-                                        if (eventResponse.Data.EndDate is not null) dates += " até " + eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
-
-                                        if (customCertificate.Data is not null)
-                                        {
-                                            html = html.Replace("{{body_text}}", customCertificate.Data.BodyText)
-                                            .Replace("{{name}}", eventParticipant.Name)
-                                            .Replace("{{function}}", functionName)
-                                            .Replace("{{name_event}}", eventResponse.Data.Title)
-                                            .Replace("{{dates}}", dates)
-                                            .Replace("{{hours}}", eventParticipant.Hours.ToString())
-                                            .Replace("{{register_book_number}}", eventResponse.Data.RegisterBookNumber)
-                                            .Replace("{{register_folder_number}}", eventResponse.Data.RegisterFolderNumber)
-                                            .Replace("{{key_certificate}}", keyCertificate)
-                                            .Replace("{{ui_uri}}", UiURI)
-                                            .Replace("{{signer1_name}}", customCertificate.Data.Signer1Name)
-                                            .Replace("{{signer1_role}}", customCertificate.Data.Signer1Role)
-                                            .Replace("{{signer1_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer1Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer1Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />")
-                                            .Replace("{{signer2_name}}", customCertificate.Data.Signer2Name)
-                                            .Replace("{{signer2_role}}", customCertificate.Data.Signer2Role)
-                                            .Replace("{{signer2_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer2Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer2Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />")
-                                            .Replace("{{signer3_name}}", customCertificate.Data.Signer3Name)
-                                            .Replace("{{signer3_role}}", customCertificate.Data.Signer3Role)
-                                            .Replace("{{signer3_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer3Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer3Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />");
-                                        }
-
-                                        var res = await certificateService.CreateAsync(new()
-                                        {
-                                            Name = eventResponse.Data.Title,
-                                            EventId = eventResponse.Data.Id,
-                                            UserId = eventParticipant.UserId,
-                                            Functions = functions,
-                                            Hours = hours,
-                                            KeyCertificate = keyCertificate,
-                                            CreatedBy = request.CreatedBy,
-                                            Html = html
-                                        });
+                                        endDate = eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
                                     }
+
+                                    // Chave única por certificado (antes usava a chave do evento, igual para todos os participantes)
+                                    string keyCertificate = Guid.NewGuid().ToString("N");
+
+                                    if (user.Data.SettingNotification.NewCertificateMail) await mailHandler.SendMailAsync(user.Data.Email, "Novo Certificado", await mailTemplate.EventFinish(user.Data.Name, eventResponse.Data.Title, eventResponse.Data.StartDate.ToString("dd/MM/yyyy"), endDate, functionName, hours.ToString()));
+
+                                    string html = customCertificate.Data is null ? "" : customCertificate.Data.Html;
+                                    string dates = eventResponse.Data.StartDate.ToString("dd/MM/yyyy");
+
+                                    if (eventResponse.Data.EndDate is not null) dates += " até " + eventResponse.Data.EndDate?.ToString("dd/MM/yyyy") ?? "";
+
+                                    if (customCertificate.Data is not null)
+                                    {
+                                        html = html.Replace("{{body_text}}", customCertificate.Data.BodyText)
+                                        .Replace("{{name}}", eventParticipant.Name)
+                                        .Replace("{{function}}", functionName)
+                                        .Replace("{{name_event}}", eventResponse.Data.Title)
+                                        .Replace("{{dates}}", dates)
+                                        .Replace("{{hours}}", hours.ToString())
+                                        .Replace("{{register_book_number}}", eventResponse.Data.RegisterBookNumber)
+                                        .Replace("{{register_folder_number}}", eventResponse.Data.RegisterFolderNumber)
+                                        .Replace("{{key_certificate}}", keyCertificate)
+                                        .Replace("{{ui_uri}}", UiURI)
+                                        .Replace("{{signer1_name}}", customCertificate.Data.Signer1Name)
+                                        .Replace("{{signer1_role}}", customCertificate.Data.Signer1Role)
+                                        .Replace("{{signer1_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer1Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer1Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />")
+                                        .Replace("{{signer2_name}}", customCertificate.Data.Signer2Name)
+                                        .Replace("{{signer2_role}}", customCertificate.Data.Signer2Role)
+                                        .Replace("{{signer2_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer2Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer2Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />")
+                                        .Replace("{{signer3_name}}", customCertificate.Data.Signer3Name)
+                                        .Replace("{{signer3_role}}", customCertificate.Data.Signer3Role)
+                                        .Replace("{{signer3_photo}}", string.IsNullOrEmpty(customCertificate.Data.Signer3Photo) ? "" : $"<img src=\"{customCertificate.Data.Signer3Photo}\" style=\"width:80px;height:36px;object-fit:contain;\" />");
+                                    }
+
+                                    var res = await certificateService.CreateAsync(new()
+                                    {
+                                        Name = eventResponse.Data.Title,
+                                        EventId = eventResponse.Data.Id,
+                                        UserId = eventParticipant.UserId,
+                                        Functions = functions,
+                                        Hours = hours,
+                                        KeyCertificate = keyCertificate,
+                                        CreatedBy = request.CreatedBy,
+                                        Html = html
+                                    });
                                 }
                             }
                         }
@@ -375,5 +351,35 @@ namespace api_camem.src.Services
             }
         }
         #endregion 
+
+        #region HELPERS
+        private async Task<(List<string> Functions, decimal Hours, bool IsPresence)> ResolveParticipantFunctionInfoAsync(EventParticipant eventParticipant)
+        {
+            if (!string.IsNullOrEmpty(eventParticipant.FunctionId))
+            {
+                ResponseApi<EventParticipantFunction?> funcResponse = await eventParticipantFunctionRepository.GetByIdAsync(eventParticipant.FunctionId);
+                if (funcResponse.Data is not null)
+                {
+                    decimal hours = eventParticipant.Hours > 0 ? eventParticipant.Hours : funcResponse.Data.Hours;
+                    return ([funcResponse.Data.Name], hours, eventParticipant.IsPresence);
+                }
+            }
+
+            // Fallback legado ou registros criados com funções vinculadas diretamente ao participante
+            ResponseApi<List<EventParticipantFunction>> listFunction = await eventParticipantFunctionRepository.GetByEventParticipantIdAsync(eventParticipant.Id);
+            if (listFunction.Data is not null && listFunction.Data.Count > 0)
+            {
+                var presentFunctions = listFunction.Data.Where(x => x.IsPresence).ToList();
+                bool isPresence = presentFunctions.Any();
+                var funcs = (isPresence ? presentFunctions : listFunction.Data).Select(x => x.Name).ToList();
+                decimal hours = eventParticipant.Hours > 0 
+                    ? eventParticipant.Hours 
+                    : (isPresence ? presentFunctions.Sum(x => x.Hours) : listFunction.Data.Sum(x => x.Hours));
+                return (funcs, hours, isPresence);
+            }
+
+            return ([], eventParticipant.Hours, eventParticipant.IsPresence);
+        }
+        #endregion
     }
 }
